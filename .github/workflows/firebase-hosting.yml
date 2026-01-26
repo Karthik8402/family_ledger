@@ -16,17 +16,30 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
+          flutter-version: '3.27.0'
           channel: 'stable'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Configure Firebase
+        run: |
+          npm install -g flutterfire_cli
+          dart pub global activate flutterfire_cli
+          flutterfire configure --project=familyledger-8c235 --platforms=web --yes
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
       - name: Install dependencies
         run: flutter pub get
 
       - name: Build web
         run: flutter build web --release
-
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
 
       - name: Deploy to Firebase Hosting
         run: firebase deploy --only hosting --token "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}"
