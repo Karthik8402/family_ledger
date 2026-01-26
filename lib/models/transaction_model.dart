@@ -14,6 +14,7 @@ class TransactionModel {
   final String userName;
   final String type; // use typeExpense or typeIncome
   final String visibility; // use visibilityShared or visibilityPrivate
+  final String? familyId;
 
   TransactionModel({
     required this.id,
@@ -24,6 +25,7 @@ class TransactionModel {
     required this.userName,
     required this.type,
     required this.visibility,
+    this.familyId,
   });
 
   // Convert from Firestore Document
@@ -38,6 +40,7 @@ class TransactionModel {
       userName: data['userName'] ?? '',
       type: data['type'] ?? 'expense',
       visibility: data['visibility'] ?? 'private',
+      familyId: data['familyId'],
     );
   }
 
@@ -51,6 +54,8 @@ class TransactionModel {
       'userName': userName,
       'type': type,
       'visibility': visibility,
+      'familyId': familyId,
     };
   }
 }
+
