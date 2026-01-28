@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../models/transaction_model.dart';
 import '../services/firestore_service.dart';
+import '../services/auth_service.dart';
+import '../utils/toast_utils.dart';
 
 class AddTransactionScreen extends StatefulWidget {
-  const AddTransactionScreen({super.key});
+  final String? initialType;
+  final String? initialTabId;
+
+  const AddTransactionScreen({super.key, this.initialType, this.initialTabId});
 
   @override
   State<AddTransactionScreen> createState() => _AddTransactionScreenState();
@@ -17,10 +21,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
-  String _transactionType = TransactionModel.typeExpense; 
+  late String _transactionType; 
   String? _selectedCategory;
   bool _isPrivate = false;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _transactionType = widget.initialType ?? TransactionModel.typeExpense;
+  }
 
   // Category definitions with icons
   static const List<Map<String, dynamic>> expenseCategories = [
@@ -87,8 +97,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
       setState(() => _isLoading = true);
 
-      final user = FirebaseAuth.instance.currentUser;
-      final String uid = user?.uid ?? 'test_user_id';
+      setState(() => _isLoading = true);
+
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final user = authService.currentUser;
+      final String uid = user?.id ?? 'test_user_id';
       final String uName = user?.email ?? 'Test User'; 
 
       try {
@@ -101,37 +114,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           userName: uName,
           type: _transactionType,
           visibility: _isPrivate ? TransactionModel.visibilityPrivate : TransactionModel.visibilityShared,
+          tabId: widget.initialTabId,
         );
 
         await Provider.of<FirestoreService>(context, listen: false).addTransaction(transaction);
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Row(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.white),
-                  SizedBox(width: 12),
-                  Text('Transaction added successfully!'),
-                ],
-              ),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: Colors.green.shade600,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          );
+          ToastUtils.showSuccess(context, 'Transaction added!');
           Navigator.pop(context);
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          );
+          ToastUtils.showError(context, 'Error: $e');
         }
       } finally {
         if (mounted) {

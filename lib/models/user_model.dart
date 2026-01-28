@@ -4,6 +4,7 @@ class UserModel {
   final String id;
   final String name;
   final String email;
+  final String? photoUrl;
   final String? familyId;
   final DateTime createdAt;
 
@@ -11,6 +12,7 @@ class UserModel {
     required this.id,
     required this.name,
     required this.email,
+    this.photoUrl,
     this.familyId,
     required this.createdAt,
   });
@@ -21,6 +23,7 @@ class UserModel {
       id: doc.id,
       name: data['name'] ?? '',
       email: data['email'] ?? '',
+      photoUrl: data['photoUrl'],
       familyId: data['familyId'],
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
@@ -30,6 +33,7 @@ class UserModel {
     return {
       'name': name,
       'email': email,
+      'photoUrl': photoUrl,
       'familyId': familyId,
       'createdAt': Timestamp.fromDate(createdAt),
     };
@@ -39,6 +43,7 @@ class UserModel {
     String? id,
     String? name,
     String? email,
+    String? photoUrl,
     String? familyId,
     DateTime? createdAt,
   }) {
@@ -46,6 +51,7 @@ class UserModel {
       id: id ?? this.id,
       name: name ?? this.name,
       email: email ?? this.email,
+      photoUrl: photoUrl ?? this.photoUrl,
       familyId: familyId ?? this.familyId,
       createdAt: createdAt ?? this.createdAt,
     );

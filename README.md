@@ -49,5 +49,5 @@ A shared family expense tracker built with Flutter and Firebase. This applicatio
 
 4.  **Run the app**:
     ```bash
-    flutter run
+    flutter run -d chrome --web-port 5000
     ```

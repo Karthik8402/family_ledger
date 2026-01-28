@@ -7,8 +7,11 @@ import 'services/auth_service.dart';
 import 'providers/theme_provider.dart';
 import 'auth_wrapper.dart';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -23,17 +26,31 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         Provider<AuthService>(create: (_) => AuthService()),
-        Provider<FirestoreService>(create: (_) => FirestoreService()),
+        ProxyProvider<AuthService, FirestoreService>(
+          update: (_, auth, __) => FirestoreService(auth),
+        ),
         ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
+          final currentTheme = themeProvider.isDarkMode 
+              ? ThemeProvider.darkTheme 
+              : ThemeProvider.lightTheme;
+          
           return MaterialApp(
             title: 'FamilyLedger',
             debugShowCheckedModeBanner: false,
             theme: ThemeProvider.lightTheme,
             darkTheme: ThemeProvider.darkTheme,
             themeMode: themeProvider.themeMode,
+            builder: (context, child) {
+              return AnimatedTheme(
+                data: currentTheme,
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeInOut,
+                child: child!,
+              );
+            },
             home: const AuthWrapper(),
           );
         },

@@ -1,25 +1,31 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'auth_service.dart';
 import '../models/transaction_model.dart';
 import '../models/user_model.dart';
 import '../models/family_model.dart';
+import '../models/tracking_tab_model.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final AuthService _authService;
+
+  FirestoreService(this._authService);
 
   // Collection References
   CollectionReference get _transactions => _db.collection('transactions');
   CollectionReference get _users => _db.collection('users');
   CollectionReference get _families => _db.collection('families');
+  CollectionReference get _trackingTabs => _db.collection('tracking_tabs');
 
   // ========== USER METHODS ==========
 
   // Create user profile
-  Future<void> createUserProfile(String userId, String name, String email) async {
+  Future<void> createUserProfile(String userId, String name, String email, String? photoUrl) async {
     await _users.doc(userId).set({
       'name': name,
       'email': email,
+      'photoUrl': photoUrl,
       'familyId': null,
       'createdAt': Timestamp.now(),
     });
@@ -44,13 +50,24 @@ class FirestoreService {
     });
   }
 
+  // Sync Google Profile (updates name, email, photoUrl on login)
+  Future<void> syncGoogleProfile(String userId, String? name, String? email, String? photoUrl) async {
+    await _users.doc(userId).set({
+      'name': name ?? 'User',
+      'email': email ?? '',
+      'photoUrl': photoUrl,
+      'lastLogin': Timestamp.now(),
+    }, SetOptions(merge: true));
+  }
+
   // Update user's familyId (creates doc if not exists)
   Future<void> updateUserFamily(String userId, String? familyId) async {
-    final user = _auth.currentUser;
+    final user = _authService.currentUser;
     await _users.doc(userId).set({
       'familyId': familyId,
       'email': user?.email ?? '',
-      'name': user?.email?.split('@')[0] ?? 'User',
+      'name': user?.displayName ?? 'User',
+      'photoUrl': user?.photoUrl,
       'createdAt': Timestamp.now(),
     }, SetOptions(merge: true));
   }
@@ -149,6 +166,18 @@ class FirestoreService {
     await updateUserFamily(memberId, null);
   }
 
+  // Transfer ownership (owner only)
+  Future<void> transferOwnership(String familyId, String newOwnerId, String requesterId) async {
+    final family = await getFamily(familyId);
+    if (family == null) throw Exception('Family not found');
+    if (family.ownerId != requesterId) throw Exception('Only owner can transfer ownership');
+    if (!family.memberIds.contains(newOwnerId)) throw Exception('New owner must be a family member');
+    
+    await _families.doc(familyId).update({
+      'ownerId': newOwnerId,
+    });
+  }
+
   // Leave family
   Future<void> leaveFamily(String userId) async {
     final user = await getUserProfile(userId);
@@ -168,14 +197,75 @@ class FirestoreService {
     await updateUserFamily(userId, null);
   }
 
+  // ========== TRACKING TABS METHODS ==========
+
+  // Create new tracking tab
+  Future<void> createTrackingTab(String name) async {
+    final user = _authService.currentUser;
+    if (user == null) throw Exception('Not authenticated');
+
+    final userProfile = await getUserProfile(user.id);
+    if (userProfile?.familyId == null) throw Exception('Join a family first');
+
+    await _trackingTabs.add({
+      'name': name,
+      'familyId': userProfile!.familyId,
+      'createdAt': Timestamp.now(),
+    });
+  }
+
+  // Delete tracking tab
+  Future<void> deleteTrackingTab(String tabId) async {
+     await _trackingTabs.doc(tabId).delete();
+     // Optional: Delete associated transactions or move them? 
+     // For now, let's keep it simple. They will become orphaned or hidden. 
+     // Better plan: update their tabId to null (move to main) or delete them.
+     // Let's just create orphans for now to avoid accidental data loss complex logic.
+  }
+
+  // Stream tracking tabs for family
+  Stream<List<TrackingTab>> streamTrackingTabs() async* {
+    final user = _authService.currentUser;
+    if (user == null) {
+      yield [];
+      return;
+    }
+
+    final userDoc = await _users.doc(user.id).get();
+    if (!userDoc.exists) {
+      yield [];
+      return;
+    }
+    
+    final userData = userDoc.data() as Map<String, dynamic>?;
+    final familyId = userData?['familyId'];
+    
+    if (familyId == null) {
+      yield [];
+      return;
+    }
+
+    yield* _trackingTabs
+        .where('familyId', isEqualTo: familyId)
+        .snapshots()
+        .map((snapshot) {
+          final tabs = snapshot.docs
+              .map((doc) => TrackingTab.fromFirestore(doc))
+              .toList();
+          // Sort client-side to avoid needing a composite index
+          tabs.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+          return tabs;
+        });
+  }
+
   // ========== TRANSACTION METHODS ==========
 
   // Add Transaction (now includes familyId)
   Future<void> addTransaction(TransactionModel transaction) async {
-    final user = _auth.currentUser;
+    final user = _authService.currentUser;
     if (user == null) throw Exception('Not authenticated');
 
-    final userProfile = await getUserProfile(user.uid);
+    final userProfile = await getUserProfile(user.id);
     if (userProfile?.familyId == null) throw Exception('Join a family first');
 
     final data = transaction.toMap();
@@ -187,7 +277,7 @@ class FirestoreService {
 
   // Get transactions for family (real-time stream)
   Stream<List<TransactionModel>> getTransactions() async* {
-    final user = _auth.currentUser;
+    final user = _authService.currentUser;
     if (user == null) {
       yield [];
       return;
@@ -195,7 +285,7 @@ class FirestoreService {
 
     // Simplified approach: Fetch familyId once, then stream transactions.
     // We use await to get the initial family ID to avoid asyncExpand blocking issues.
-    final userDoc = await _users.doc(user.uid).get();
+    final userDoc = await _users.doc(user.id).get();
     
     if (!userDoc.exists) {
       yield [];
@@ -220,7 +310,7 @@ class FirestoreService {
               .where((txn) {
                 // Privacy logic: shared = all family sees, private = only owner sees
                 bool isShared = txn.visibility == 'shared';
-                bool isMyPrivate = txn.visibility == 'private' && txn.userId == user.uid;
+                bool isMyPrivate = txn.visibility == 'private' && txn.userId == user.id;
                 return isShared || isMyPrivate;
               })
               .toList();
@@ -233,14 +323,16 @@ class FirestoreService {
 
   // Calculate family total
   double calculateHomeTotal(List<TransactionModel> transactions) {
+     // Only count transactions NOT in a special tab
     return transactions
-        .where((t) => t.visibility == 'shared')
+        .where((t) => t.visibility == 'shared' && t.tabId == null)
         .fold(0.0, (sum, t) => t.type == 'expense' ? sum + t.amount : sum - t.amount);
   }
 
   double calculatePersonalSpend(List<TransactionModel> transactions, String userId) {
+    // Only count transactions NOT in a special tab
     return transactions
-        .where((t) => t.visibility == 'private' && t.userId == userId && t.type == 'expense')
+        .where((t) => t.visibility == 'private' && t.userId == userId && t.type == 'expense' && t.tabId == null)
         .fold(0.0, (sum, t) => sum + t.amount);
   }
 }

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../services/firestore_service.dart';
+import '../services/auth_service.dart';
 import '../models/family_model.dart';
 
 class FamilySetupScreen extends StatefulWidget {
@@ -35,11 +35,12 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
 
     setState(() => _isLoading = true);
     try {
-      final user = FirebaseAuth.instance.currentUser;
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final user = authService.currentUser;
       if (user == null) throw Exception('Not logged in');
 
       final family = await Provider.of<FirestoreService>(context, listen: false)
-          .createFamily(_familyNameController.text.trim(), user.uid);
+          .createFamily(_familyNameController.text.trim(), user.id);
 
       if (mounted) {
         _showSuccess('Family created! Share code: ${family.code}');
@@ -60,11 +61,12 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
 
     setState(() => _isLoading = true);
     try {
-      final user = FirebaseAuth.instance.currentUser;
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final user = authService.currentUser;
       if (user == null) throw Exception('Not logged in');
 
       await Provider.of<FirestoreService>(context, listen: false)
-          .joinFamilyByCode(code, user.uid);
+          .joinFamilyByCode(code, user.id);
 
       if (mounted) {
         _showSuccess('Successfully joined family!');

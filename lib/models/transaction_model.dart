@@ -15,6 +15,7 @@ class TransactionModel {
   final String type; // use typeExpense or typeIncome
   final String visibility; // use visibilityShared or visibilityPrivate
   final String? familyId;
+  final String? tabId;
 
   TransactionModel({
     required this.id,
@@ -26,6 +27,7 @@ class TransactionModel {
     required this.type,
     required this.visibility,
     this.familyId,
+    this.tabId,
   });
 
   // Convert from Firestore Document
@@ -41,6 +43,7 @@ class TransactionModel {
       type: data['type'] ?? 'expense',
       visibility: data['visibility'] ?? 'private',
       familyId: data['familyId'],
+      tabId: data['tabId'],
     );
   }
 
@@ -55,6 +58,7 @@ class TransactionModel {
       'type': type,
       'visibility': visibility,
       'familyId': familyId,
+      'tabId': tabId,
     };
   }
 }
