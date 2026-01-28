@@ -30,7 +30,7 @@ class AuthService {
       // Attempt to restore the user's session silently
       // We add a timeout so the user isn't staring at a loading screen forever
       // if the network is slow or Google is taking time to respond.
-      await _googleSignIn.signInSilently().timeout(const Duration(seconds: 3));
+      await _googleSignIn.signInSilently().timeout(const Duration(seconds: 2));
     } catch (e) {
       debugPrint('Silent sign-in ignored or timed out: $e');
     } finally {
