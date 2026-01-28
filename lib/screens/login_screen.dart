@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
+import '../utils/toast_utils.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -50,20 +51,23 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white),
-                const SizedBox(width: 12),
-                Expanded(child: Text('Sign In Failed: $e')),
-              ],
-            ),
-            backgroundColor: Colors.red.shade600,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
+        String errorMessage = 'Sign In Failed';
+        final errorString = e.toString().toLowerCase();
+
+        // 1. Suppress toast for popup_closed (user cancelled)
+        if (errorString.contains('popup_closed')) {
+          debugPrint('Sign in cancelled by user');
+          return; // Exit without showing toast
+        } 
+        
+        if (errorString.contains('network_error')) {
+          errorMessage = 'Check your internet connection';
+        } else {
+          // Clean up the "Exception:" prefix if present
+          errorMessage = e.toString().replaceAll('Exception: ', '');
+        }
+
+        ToastUtils.showError(context, errorMessage);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

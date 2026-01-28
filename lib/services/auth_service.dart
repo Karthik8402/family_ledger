@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart'; // for kIsWeb
 
@@ -13,24 +14,37 @@ class AuthService {
     ],
   );
 
+  // Stream controller to handle auth state changes and force initial value
+  final _authStreamController = StreamController<GoogleSignInAccount?>.broadcast();
+
   AuthService() {
+    // Forward Google Sign-In events to our controller
+    _googleSignIn.onCurrentUserChanged.listen((account) {
+      _authStreamController.add(account);
+    });
     _init();
   }
 
   Future<void> _init() async {
     try {
       // Attempt to restore the user's session silently
-      await _googleSignIn.signInSilently();
+      // We add a timeout so the user isn't staring at a loading screen forever
+      // if the network is slow or Google is taking time to respond.
+      await _googleSignIn.signInSilently().timeout(const Duration(seconds: 3));
     } catch (e) {
-      // Silent sign-in failed. This is expected if the user is not logged in 
-      // or if there are browser-specific issues (e.g. FedCM / 3rd party cookies).
-      // We swallow the error to not interrupt the UI, as the user can sign in manually.
-      debugPrint('Silent sign-in ignored error: $e');
+      debugPrint('Silent sign-in ignored or timed out: $e');
+    } finally {
+      // CRITICAL: Force an emission to unblock StreamBuilders waiting for connection
+      // If user is null (not signed in), this ensures 'null' is emitted so
+      // StreamBuilder knows we are done waiting and can show LoginScreen.
+      if (_googleSignIn.currentUser == null) {
+        _authStreamController.add(null);
+      }
     }
   }
 
-  // Stream of auth changes
-  Stream<GoogleSignInAccount?> get authStateChanges => _googleSignIn.onCurrentUserChanged;
+  // Stream of auth changes - now using our wrapper controller
+  Stream<GoogleSignInAccount?> get authStateChanges => _authStreamController.stream;
 
   // Get current user synchronously
   GoogleSignInAccount? get currentUser => _googleSignIn.currentUser;

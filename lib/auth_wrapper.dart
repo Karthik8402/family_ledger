@@ -18,6 +18,7 @@ class AuthWrapper extends StatelessWidget {
       stream: authService.authStateChanges,
       initialData: authService.currentUser,
       builder: (context, authSnapshot) {
+        
         if (authSnapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
@@ -45,6 +46,7 @@ class _FamilyCheckWrapper extends StatelessWidget {
     return StreamBuilder<UserModel?>(
       stream: firestoreService.streamUserProfile(userId),
       builder: (context, userSnapshot) {
+        
         if (userSnapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
