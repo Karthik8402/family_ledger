@@ -45,25 +45,63 @@ class TransactionItemWidget extends StatelessWidget {
         ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 6.0),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                DateFormat('MMM d').format(transaction.date),
-                style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5), fontSize: 13),
-              ),
-              if (isPrivate) ...[
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(4),
+              Row(
+                children: [
+                  Text(
+                    DateFormat('MMM d').format(transaction.date),
+                    style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5), fontSize: 13),
                   ),
-                  child: Text('Private', style: TextStyle(fontSize: 10, color: theme.colorScheme.onSurface.withOpacity(0.6))),
+                  if (isPrivate) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text('Private', style: TextStyle(fontSize: 10, color: theme.colorScheme.onSurface.withOpacity(0.6))),
+                    ),
+                  ] else if (transaction.userName.isNotEmpty) ...[
+                     const SizedBox(width: 6),
+                     Text('• ${transaction.userName.split('@')[0]}', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
+                  ],
+                ],
+              ),
+              if (transaction.note.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.sticky_note_2_outlined,
+                      size: 12,
+                      color: theme.colorScheme.primary.withOpacity(0.7),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Note: ',
+                      style: TextStyle(
+                        color: theme.colorScheme.primary.withOpacity(0.7),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        transaction.note,
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
-              ] else if (transaction.userName.isNotEmpty) ...[
-                 const SizedBox(width: 6),
-                 Text('• ${transaction.userName.split('@')[0]}', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
               ],
             ],
           ),

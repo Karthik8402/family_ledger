@@ -101,6 +101,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           type: _transactionType,
           visibility: _isPrivate ? TransactionModel.visibilityPrivate : TransactionModel.visibilityShared,
           tabId: widget.initialTabId,
+          note: _noteController.text.trim(),
         );
 
         await Provider.of<FirestoreService>(context, listen: false).addTransaction(transaction);

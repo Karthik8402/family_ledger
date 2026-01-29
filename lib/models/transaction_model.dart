@@ -16,6 +16,7 @@ class TransactionModel {
   final String visibility; // use visibilityShared or visibilityPrivate
   final String? familyId;
   final String? tabId;
+  final String note;
 
   TransactionModel({
     required this.id,
@@ -28,6 +29,7 @@ class TransactionModel {
     required this.visibility,
     this.familyId,
     this.tabId,
+    this.note = '',
   });
 
   // Convert from Firestore Document
@@ -44,6 +46,7 @@ class TransactionModel {
       visibility: data['visibility'] ?? 'private',
       familyId: data['familyId'],
       tabId: data['tabId'],
+      note: data['note'] ?? '',
     );
   }
 
@@ -59,6 +62,7 @@ class TransactionModel {
       'visibility': visibility,
       'familyId': familyId,
       'tabId': tabId,
+      'note': note,
     };
   }
 }
