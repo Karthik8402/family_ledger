@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../models/transaction_model.dart';
+import '../models/budget_model.dart';
 import '../services/firestore_service.dart';
 import '../widgets/animated_pie_chart.dart';
 import '../widgets/animated_bar_chart.dart';
@@ -100,36 +101,34 @@ class _StatsScreenState extends State<StatsScreen> with SingleTickerProviderStat
       ),
       body: StreamBuilder<List<TransactionModel>>(
         stream: firestoreService.getTransactions(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(color: primaryColor),
-                  const SizedBox(height: 16),
-                  Text('Loading statistics...', style: TextStyle(color: isDark ? Colors.white54 : Colors.black54)),
-                ],
-              ),
-            );
+        builder: (context, txnSnapshot) {
+          if (txnSnapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator(color: primaryColor));
           }
 
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+          if (txnSnapshot.hasError) {
+            return Center(child: Text('Error: ${txnSnapshot.error}'));
           }
 
-          final allTransactions = snapshot.data ?? [];
+          final allTransactions = txnSnapshot.data ?? [];
           final monthlyTransactions = allTransactions.where((t) {
             return t.date.month == widget.month && t.date.year == widget.year && t.tabId == null;
           }).toList();
 
-          return TabBarView(
-            controller: _tabController,
-            children: [
-              _buildOverviewTab(context, monthlyTransactions, isDark, primaryColor),
-              _buildCategoriesTab(context, monthlyTransactions, isDark, primaryColor),
-              _buildTrendsTab(context, monthlyTransactions, isDark, primaryColor),
-            ],
+          return StreamBuilder<List<BudgetModel>>(
+            stream: firestoreService.streamBudgets(widget.month, widget.year),
+            builder: (context, budgetSnapshot) {
+              final budgets = budgetSnapshot.data ?? [];
+
+              return TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildOverviewTab(context, monthlyTransactions, isDark, primaryColor),
+                  _buildCategoriesTab(context, monthlyTransactions, budgets, isDark, primaryColor),
+                  _buildTrendsTab(context, monthlyTransactions, isDark, primaryColor),
+                ],
+              );
+            }
           );
         },
       ),
@@ -349,7 +348,7 @@ class _StatsScreenState extends State<StatsScreen> with SingleTickerProviderStat
   }
 
   // --- TAB 2: CATEGORIES ---
-  Widget _buildCategoriesTab(BuildContext context, List<TransactionModel> transactions, bool isDark, Color primaryColor) {
+  Widget _buildCategoriesTab(BuildContext context, List<TransactionModel> transactions, List<BudgetModel> budgets, bool isDark, Color primaryColor) {
     final expenses = transactions.where((t) => t.type == TransactionModel.typeExpense && t.visibility == TransactionModel.visibilityShared);
     
     if (expenses.isEmpty) {
@@ -398,7 +397,19 @@ class _StatsScreenState extends State<StatsScreen> with SingleTickerProviderStat
         // Category Cards with Progress
         ...sortedCategories.asMap().entries.map((entry) {
           final color = chartColors[entry.key % chartColors.length];
-          final percentage = (entry.value.value / totalExpense * 100);
+          final categoryName = entry.value.key;
+          final amount = entry.value.value;
+          final percentage = (amount / totalExpense * 100);
+          
+          // Check for budget
+          final budget = budgets.firstWhere(
+            (b) => b.categoryName == categoryName, 
+            orElse: () => BudgetModel(id: '', familyId: '', categoryName: '', amount: 0, month: 0, year: 0)
+          );
+          final hasBudget = budget.amount > 0;
+          final budgetProgress = hasBudget ? (amount / budget.amount) : 0.0;
+          final budgetColor = budgetProgress > 1.0 ? Colors.red : (budgetProgress > 0.8 ? Colors.orange : color);
+
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
@@ -417,32 +428,70 @@ class _StatsScreenState extends State<StatsScreen> with SingleTickerProviderStat
                         color: color.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Center(child: Text(_getCategoryEmoji(entry.value.key), style: const TextStyle(fontSize: 18))),
+                      child: Center(child: Text(_getCategoryEmoji(categoryName), style: const TextStyle(fontSize: 18))),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(entry.value.key, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: isDark ? Colors.white : Colors.black87)),
+                          Text(categoryName, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: isDark ? Colors.white : Colors.black87)),
                           const SizedBox(height: 2),
-                          Text('${percentage.toStringAsFixed(1)}% of total', style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 12)),
+                          if (hasBudget)
+                             Text(
+                               '${(budgetProgress * 100).toStringAsFixed(0)}% of ₹${NumberFormat.compact().format(budget.amount)} Budget',
+                               style: TextStyle(color: budgetColor, fontSize: 12, fontWeight: FontWeight.bold)
+                             )
+                          else
+                            Text('${percentage.toStringAsFixed(1)}% of total', style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 12)),
                         ],
                       ),
                     ),
-                    Text('₹${NumberFormat('#,##,###').format(entry.value.value)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text('₹${NumberFormat('#,##,###').format(amount)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
+                        if (hasBudget && amount > budget.amount)
+                          Text('+₹${NumberFormat.compact().format(amount - budget.amount)} over', style: const TextStyle(color: Colors.red, fontSize: 10)),
+                      ],
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: percentage / 100,
-                    minHeight: 6,
-                    backgroundColor: isDark ? Colors.white12 : Colors.grey.shade200,
-                    valueColor: AlwaysStoppedAnimation(color),
-                  ),
+                Stack(
+                  children: [
+                    // Background track
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: 0, // Just track
+                        minHeight: 8, // Thicker for budget
+                        backgroundColor: isDark ? Colors.white12 : Colors.grey.shade200,
+                      ),
+                    ),
+                     // Progress
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: hasBudget ? budgetProgress.clamp(0.0, 1.0) : percentage / 100,
+                        minHeight: 8,
+                        backgroundColor: Colors.transparent,
+                        valueColor: AlwaysStoppedAnimation(hasBudget ? budgetColor : color),
+                      ),
+                    ),
+                  ],
                 ),
+                if (hasBudget)
+                   Padding(
+                     padding: const EdgeInsets.only(top: 4),
+                     child: Row(
+                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                       children: [
+                         Text('₹0', style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 10)),
+                         Text('₹${NumberFormat.compact().format(budget.amount)}', style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 10)),
+                       ],
+                     ),
+                   ),
               ],
             ),
           ).animate().slideX(begin: 0.1, end: 0, delay: (60 * entry.key).ms, duration: 350.ms).fadeIn();

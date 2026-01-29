@@ -5,6 +5,8 @@ import '../models/transaction_model.dart';
 import '../models/user_model.dart';
 import '../models/family_model.dart';
 import '../models/tracking_tab_model.dart';
+import '../models/category_model.dart';
+import '../models/budget_model.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -17,6 +19,12 @@ class FirestoreService {
   CollectionReference get _users => _db.collection('users');
   CollectionReference get _families => _db.collection('families');
   CollectionReference get _trackingTabs => _db.collection('tracking_tabs');
+
+  // Helper to access categories sub-collection
+
+  CollectionReference _getCategoriesRef(String familyId) {
+    return _families.doc(familyId).collection('categories');
+  }
 
   // ========== USER METHODS ==========
 
@@ -334,5 +342,113 @@ class FirestoreService {
     return transactions
         .where((t) => t.visibility == 'private' && t.userId == userId && t.type == 'expense' && t.tabId == null)
         .fold(0.0, (sum, t) => sum + t.amount);
+  }
+
+
+  // ========== CATEGORY METHODS ==========
+
+  // Stream categories for a family
+  Stream<List<CategoryModel>> streamCategories(String familyId) {
+    return _getCategoriesRef(familyId)
+      .orderBy('name')
+      .snapshots()
+      .map((snapshot) => snapshot.docs
+          .map((doc) => CategoryModel.fromFirestore(doc))
+          .toList());
+  }
+
+  // Add a new category
+  Future<void> addCategory(String familyId, CategoryModel category) async {
+    await _getCategoriesRef(familyId).add(category.toMap());
+  }
+
+  // Delete a category
+  Future<void> deleteCategory(String familyId, String categoryId) async {
+    await _getCategoriesRef(familyId).doc(categoryId).delete();
+  }
+
+  // Ensure default categories exist (Data Seeding)
+  Future<void> ensureDefaultCategories(String familyId) async {
+    final ref = _getCategoriesRef(familyId);
+    final snapshot = await ref.limit(1).get();
+
+    if (snapshot.docs.isNotEmpty) return; // Already seeded
+
+    // Standard Categories
+    final defaults = [
+      // Expenses
+      CategoryModel(id: '', name: 'Grocery', iconCode: 0xe596, type: 'expense', isDefault: true), // shopping_cart
+      CategoryModel(id: '', name: 'Food', iconCode: 0xe532, type: 'expense', isDefault: true), // restaurant
+      CategoryModel(id: '', name: 'Transport', iconCode: 0xe1d7, type: 'expense', isDefault: true), // directions_car
+      CategoryModel(id: '', name: 'Bills', iconCode: 0xef6e, type: 'expense', isDefault: true), // receipt_long
+      CategoryModel(id: '', name: 'Rent', iconCode: 0xe318, type: 'expense', isDefault: true), // home
+      CategoryModel(id: '', name: 'Shopping', iconCode: 0xe59c, type: 'expense', isDefault: true), // shopping_bag
+      CategoryModel(id: '', name: 'Medical', iconCode: 0xe3ae, type: 'expense', isDefault: true), // local_hospital
+      CategoryModel(id: '', name: 'Fun', iconCode: 0xe404, type: 'expense', isDefault: true), // movie
+      CategoryModel(id: '', name: 'Education', iconCode: 0xe559, type: 'expense', isDefault: true), // school
+      CategoryModel(id: '', name: 'Fuel', iconCode: 0xe3ad, type: 'expense', isDefault: true), // local_gas_station
+      // Income
+      CategoryModel(id: '', name: 'Salary', iconCode: 0xe6f2, type: 'income', isDefault: true), // work
+      CategoryModel(id: '', name: 'Business', iconCode: 0xe0af, type: 'income', isDefault: true), // business
+      CategoryModel(id: '', name: 'Gift', iconCode: 0xe8f6, type: 'income', isDefault: true), // card_giftcard
+      CategoryModel(id: '', name: 'Investment', iconCode: 0xe6e1, type: 'income', isDefault: true), // trending_up
+    ];
+
+    final batch = _db.batch();
+    for (var cat in defaults) {
+      final docRef = ref.doc();
+      batch.set(docRef, cat.toMap());
+    }
+    await batch.commit();
+  }
+
+  // ========== BUDGET METHODS ==========
+
+  CollectionReference _getBudgetsRef(String familyId) {
+    return _families.doc(familyId).collection('budgets');
+  }
+
+  // Set Budget (Create or Update)
+  Future<void> setBudget(String familyId, BudgetModel budget) async {
+    // We use a composite ID or query to find existing budget, but simpler:
+    // Let's use "${year}_${month}_${categoryName}" as ID to enforce uniqueness easily
+    final docId = '${budget.year}_${budget.month}_${budget.categoryName}';
+    await _getBudgetsRef(familyId).doc(docId).set(budget.toMap());
+  }
+
+  // Stream Budgets for a specific month (Auto-resolves familyId)
+  Stream<List<BudgetModel>> streamBudgets(int month, int year) async* {
+    final user = _authService.currentUser;
+    if (user == null) {
+      yield [];
+      return;
+    }
+
+    final userDoc = await _users.doc(user.id).get();
+    if (!userDoc.exists) {
+      yield [];
+      return;
+    }
+    
+    final userData = userDoc.data() as Map<String, dynamic>?;
+    final familyId = userData?['familyId'];
+    
+    if (familyId == null) {
+      yield [];
+      return;
+    }
+
+    yield* _getBudgetsRef(familyId)
+        .where('month', isEqualTo: month)
+        .where('year', isEqualTo: year)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => BudgetModel.fromFirestore(doc))
+            .toList());
+  }
+
+  // Delete Budget
+  Future<void> deleteBudget(String familyId, String budgetId) async {
+    await _getBudgetsRef(familyId).doc(budgetId).delete();
   }
 }

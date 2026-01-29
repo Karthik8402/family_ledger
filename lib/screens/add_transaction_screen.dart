@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../models/transaction_model.dart';
+import '../models/category_model.dart';
 import '../services/firestore_service.dart';
 import '../services/auth_service.dart';
 import '../utils/toast_utils.dart';
+import 'category_management_screen.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final String? initialType;
@@ -25,48 +27,32 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   String? _selectedCategory;
   bool _isPrivate = false;
   bool _isLoading = false;
+  String? _familyId;
 
   @override
   void initState() {
     super.initState();
     _transactionType = widget.initialType ?? TransactionModel.typeExpense;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadFamilyId());
+  }
+
+  Future<void> _loadFamilyId() async {
+    final user = context.read<AuthService>().currentUser;
+    if (user != null) {
+      final userProfile = await context.read<FirestoreService>().getUserProfile(user.id);
+      if (mounted) {
+        setState(() => _familyId = userProfile?.familyId);
+        if (_familyId != null) {
+          // Ensure defaults exist so the dropdown isn't empty on first run
+          context.read<FirestoreService>().ensureDefaultCategories(_familyId!);
+        }
+      }
+    }
   }
 
   // Category definitions with icons
-  static const List<Map<String, dynamic>> expenseCategories = [
-    {'name': 'Grocery', 'icon': Icons.shopping_cart},
-    {'name': 'Food', 'icon': Icons.restaurant},
-    {'name': 'Transport', 'icon': Icons.directions_car},
-    {'name': 'Bills', 'icon': Icons.receipt_long},
-    {'name': 'Rent', 'icon': Icons.home},
-    {'name': 'Shopping', 'icon': Icons.shopping_bag},
-    {'name': 'Healthcare', 'icon': Icons.local_hospital},
-    {'name': 'Entertainment', 'icon': Icons.movie},
-    {'name': 'Education', 'icon': Icons.school},
-    {'name': 'Fuel', 'icon': Icons.local_gas_station},
-    {'name': 'Electricity', 'icon': Icons.electric_bolt},
-    {'name': 'Water', 'icon': Icons.water_drop},
-    {'name': 'Internet', 'icon': Icons.wifi},
-    {'name': 'Phone', 'icon': Icons.phone_android},
-    {'name': 'Others', 'icon': Icons.more_horiz},
-  ];
+  // Removed hardcoded categories
 
-  static const List<Map<String, dynamic>> incomeCategories = [
-    {'name': 'Salary', 'icon': Icons.work},
-    {'name': 'Commission', 'icon': Icons.handshake},
-    {'name': 'Business', 'icon': Icons.business},
-    {'name': 'Investment', 'icon': Icons.trending_up},
-    {'name': 'Freelance', 'icon': Icons.laptop_mac},
-    {'name': 'Rental', 'icon': Icons.apartment},
-    {'name': 'Gift', 'icon': Icons.card_giftcard},
-    {'name': 'Bonus', 'icon': Icons.star},
-    {'name': 'Interest', 'icon': Icons.savings},
-    {'name': 'Dividend', 'icon': Icons.account_balance},
-    {'name': 'Others', 'icon': Icons.more_horiz},
-  ];
-
-  List<Map<String, dynamic>> get currentCategories => 
-      _transactionType == TransactionModel.typeExpense ? expenseCategories : incomeCategories;
 
   @override
   void dispose() {
@@ -254,125 +240,180 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       const SizedBox(height: 24),
 
                       // Category Dropdown
-                      Text(
-                        'Category',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Category',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          TextButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const CategoryManagementScreen()),
+                              );
+                            },
+                            icon: const Icon(Icons.edit, size: 16),
+                            label: const Text('Manage'),
+                            style: TextButton.styleFrom(
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 12),
                       
-                      Container(
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: _selectedCategory != null 
-                                ? primaryColor.withOpacity(0.5)
-                                : Theme.of(context).dividerColor.withOpacity(0.3),
-                          ),
-                          boxShadow: isDark ? null : [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _selectedCategory,
-                            hint: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.category, color: Colors.grey.shade500),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Select Category',
-                                    style: TextStyle(color: Colors.grey.shade500),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            isExpanded: true,
-                            icon: Padding(
-                              padding: const EdgeInsets.only(right: 16),
-                              child: Icon(Icons.keyboard_arrow_down, color: primaryColor),
-                            ),
-                            dropdownColor: isDark ? const Color(0xFF2D2D44) : Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            items: currentCategories.map((category) {
-                              return DropdownMenuItem<String>(
-                                value: category['name'],
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: primaryColor.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Icon(
-                                          category['icon'],
-                                          color: primaryColor,
-                                          size: 20,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 14),
-                                      Text(
-                                        category['name'],
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: 16,
-                                        ),
+                      _familyId == null 
+                          ? const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()))
+                          : StreamBuilder<List<CategoryModel>>(
+                              stream: context.read<FirestoreService>().streamCategories(_familyId!),
+                              builder: (context, snapshot) {
+                                if (!snapshot.hasData) {
+                                  return const Center(child: Padding(padding: EdgeInsets.all(16.0), child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))));
+                                }
+
+                                final allCategories = snapshot.data!;
+                                final currentCategories = allCategories
+                                    .where((c) => c.type == _transactionType)
+                                    .toList();
+
+                                if (currentCategories.isEmpty) {
+                                  return Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                                    ),
+                                    child: const Text('No categories found. Click Manage to add some!'),
+                                  );
+                                }
+
+                                // Reset selection if not in list
+                                if (_selectedCategory != null && !currentCategories.any((c) => c.name == _selectedCategory)) {
+                                  // Don't auto-reset immediately to avoid flicker, or do?
+                                  // For now, let's keep it, but it might be invalid.
+                                  // Actually, better to reset it safely after build?
+                                  // We'll let the user pick again.
+                                }
+
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: _selectedCategory != null 
+                                          ? primaryColor.withOpacity(0.5)
+                                          : Theme.of(context).dividerColor.withOpacity(0.3),
+                                    ),
+                                    boxShadow: isDark ? null : [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.04),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
                                       ),
                                     ],
                                   ),
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              setState(() => _selectedCategory = value);
-                            },
-                            selectedItemBuilder: (context) {
-                              return currentCategories.map((category) {
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: primaryColor.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Icon(
-                                          category['icon'],
-                                          color: primaryColor,
-                                          size: 20,
+                                  child: DropdownButtonHideUnderline(
+                                    child: DropdownButton<String>(
+                                      value: currentCategories.any((c) => c.name == _selectedCategory) ? _selectedCategory : null,
+                                      hint: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.category, color: Colors.grey.shade500),
+                                            const SizedBox(width: 12),
+                                            Text(
+                                              'Select Category',
+                                              style: TextStyle(color: Colors.grey.shade500),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                      const SizedBox(width: 14),
-                                      Text(
-                                        category['name'],
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 16,
-                                          color: primaryColor,
-                                        ),
+                                      isExpanded: true,
+                                      icon: Padding(
+                                        padding: const EdgeInsets.only(right: 16),
+                                        child: Icon(Icons.keyboard_arrow_down, color: primaryColor),
                                       ),
-                                    ],
+                                      dropdownColor: isDark ? const Color(0xFF2D2D44) : Colors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      items: currentCategories.map((category) {
+                                        return DropdownMenuItem<String>(
+                                          value: category.name,
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                                            child: Row(
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets.all(8),
+                                                  decoration: BoxDecoration(
+                                                    color: primaryColor.withOpacity(0.1),
+                                                    borderRadius: BorderRadius.circular(8),
+                                                  ),
+                                                  child: Icon(
+                                                    IconData(category.iconCode, fontFamily: 'MaterialIcons'),
+                                                    color: primaryColor,
+                                                    size: 20,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 14),
+                                                Text(
+                                                  category.name,
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.w500,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                      onChanged: (value) {
+                                        setState(() => _selectedCategory = value);
+                                      },
+                                      selectedItemBuilder: (context) {
+                                        return currentCategories.map((category) {
+                                          return Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                                            child: Row(
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets.all(8),
+                                                  decoration: BoxDecoration(
+                                                    color: primaryColor.withOpacity(0.1),
+                                                    borderRadius: BorderRadius.circular(8),
+                                                  ),
+                                                  child: Icon(
+                                                    IconData(category.iconCode, fontFamily: 'MaterialIcons'),
+                                                    color: primaryColor,
+                                                    size: 20,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 14),
+                                                Text(
+                                                  category.name,
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 16,
+                                                    color: primaryColor,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }).toList();
+                                      },
+                                    ),
                                   ),
                                 );
-                              }).toList();
-                            },
-                          ),
-                        ),
-                      ).animate().slideX(begin: 0.1, end: 0, delay: 300.ms).fadeIn(),
+                              }
+                            ).animate().slideX(begin: 0.1, end: 0, delay: 300.ms).fadeIn(),
                       
                       const SizedBox(height: 24),
 
