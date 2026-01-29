@@ -44,7 +44,7 @@ jobs:
         run: flutter pub get
 
       - name: Build web
-        run: flutter build web --release
+        run: flutter build web --release --no-tree-shake-icons
 
       - name: Deploy to Firebase Hosting
         run: firebase deploy --only hosting --token "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}"

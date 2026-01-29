@@ -58,6 +58,9 @@ A shared family expense tracker built with Flutter and Firebase. This applicatio
     ```bash
     # Run on Chrome with a fixed port (required for Google Sign-In)
     flutter run -d chrome --web-port 5000
+
+    # Build for Production (if needed locally)
+    flutter build web --release --no-tree-shake-icons
     ```
 
 ## Project Structure
