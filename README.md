@@ -4,10 +4,10 @@ A shared family expense tracker built with Flutter and Firebase. This applicatio
 
 ## Features
 
--   **User Authentication**: Secure sign-up and login functionality.
+-   **User Authentication**: Secure sign-in using Google.
 -   **Transaction Management**:
     -   Add **Income** or **Expense** transactions.
-    -    Categorize transactions (e.g., Groceries, Rent, Salary).
+    -   Categorize transactions (e.g., Groceries, Rent, Salary).
     -   **Visibility Control**: Mark transactions as **Shared** (visible to the family) or **Private** (only visible to you).
 -   **Family Contributions**:
     -   View total shared family pool (Income).
@@ -18,17 +18,21 @@ A shared family expense tracker built with Flutter and Firebase. This applicatio
 ## Tech Stack
 
 -   **Frontend**: Flutter (Dart)
--   **Backend**: Firebase (Firestore, Authentication)
+-   **Backend**: 
+    -   **Database**: Firebase Cloud Firestore
+    -   **Authentication**: Google Sign-In (managed via Firestore profiles)
 -   **State Management**: Provider
 -   **Utilities**: 
     -   `flutter_animate` for UI animations.
     -   `intl` for date and currency formatting.
+    -   `fl_chart` for statistical graphs.
 
 ## Getting Started
 
 ### Prerequisites
 -   Flutter SDK installed (Version 3.0.0+)
--   FirebaseCLI configured
+-   Firebase CLI configured
+-   Google Cloud Project with simple OAuth setup
 
 ### Installation
 
@@ -43,11 +47,23 @@ A shared family expense tracker built with Flutter and Firebase. This applicatio
     flutter pub get
     ```
 
-3.  **Firebase Setup**:
-    -   Ensure `firebase_options.dart` is present in `lib/` (generated via `flutterfire configure`).
-    -   This project relies on Firestore and Firebase Auth.
+3.  **Configuration**:
+    -   **Firebase**: Ensure `firebase_options.dart` is present in `lib/` (generated via `flutterfire configure`).
+    -   **Environment**: Create a `.env` file in the root if required (consult project maintainer for keys).
+    -   **Google Sign-In**: 
+        -   Authorise your local development port (e.g., `http://localhost:5000`) in the Google Cloud Console.
+        -   See `google_cloud_guide.md` for troubleshooting "App Verification" or "Loopback IP" warnings.
 
 4.  **Run the app**:
     ```bash
+    # Run on Chrome with a fixed port (required for Google Sign-In)
     flutter run -d chrome --web-port 5000
     ```
+
+## Project Structure
+
+-   `lib/screens`: UI screens (Login, Home, Add Transaction).
+-   `lib/services`: Service layer for Firestore and Auth.
+-   `lib/widgets`: Reusable UI components.
+-   `lib/models`: Data models.
+-   `assets/images`: Project images and logos.

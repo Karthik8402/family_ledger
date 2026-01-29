@@ -43,7 +43,7 @@ class MyApp extends StatelessWidget {
               : ThemeProvider.lightTheme;
           
           return MaterialApp(
-            title: 'FamilyLedger',
+            title: 'Family Ledger',
             debugShowCheckedModeBanner: false,
             theme: ThemeProvider.lightTheme,
             darkTheme: ThemeProvider.darkTheme,
