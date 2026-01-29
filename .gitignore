@@ -54,3 +54,4 @@ lib/firebase_options.dart
 .env
 .env.*
 !.env.example
+assets/env
