@@ -116,7 +116,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> wit
             final cat = categories[index];
             return ListTile(
               leading: CircleAvatar(
-                backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                 child: Icon(IconData(cat.iconCode, fontFamily: 'MaterialIcons'), color: Theme.of(context).primaryColor),
               ),
               title: Text(cat.name),
@@ -156,7 +156,9 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> wit
     );
 
     if (confirm == true && _familyId != null) {
-      await context.read<FirestoreService>().deleteCategory(_familyId!, category.id);
+      if (mounted) {
+         await context.read<FirestoreService>().deleteCategory(_familyId!, category.id);
+      }
     }
   }
 
@@ -183,7 +185,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> wit
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Set a monthly limit for this category. (Current Month)'),
+            const Text('Set a monthly limit for this category. (Current Month)'),
             const SizedBox(height: 16),
             TextField(
               controller: controller,
@@ -316,7 +318,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: isSelected ? Theme.of(context).primaryColor.withOpacity(0.2) : null,
+                        color: isSelected ? Theme.of(context).primaryColor.withValues(alpha: 0.2) : null,
                         border: isSelected ? Border.all(color: Theme.of(context).primaryColor) : null,
                         borderRadius: BorderRadius.circular(8),
                       ),

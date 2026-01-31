@@ -212,7 +212,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: (isExpense ? Colors.red : Colors.green).withOpacity(0.3),
+                              color: (isExpense ? Colors.red : Colors.green).withValues(alpha: 0.3),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),
@@ -223,7 +223,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             Text(
                               isExpense ? 'Expense Amount' : 'Income Amount',
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withValues(alpha: 0.9),
                                 fontSize: 14,
                                 letterSpacing: 1,
                               ),
@@ -244,13 +244,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                   prefixStyle: TextStyle(
                                     fontSize: 44,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white.withOpacity(0.8),
+                                    color: Colors.white.withValues(alpha: 0.8),
                                   ),
                                   border: InputBorder.none,
                                   enabledBorder: InputBorder.none,
                                   focusedBorder: InputBorder.none,
                                   hintText: '0.00',
-                                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
                                   filled: false,
                                 ),
                                 validator: (value) {
@@ -269,7 +269,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       // Type Selector
                       Container(
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withOpacity(0.08) : Colors.grey.shade100,
+                          color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.shade100,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         padding: const EdgeInsets.all(4),
@@ -321,17 +321,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 }
 
                                 final allCategories = snapshot.data!;
+                                // Deduplicate categories by name to prevent Dropdown error if duplicates exist
+                                final uniqueCategories = <String>{};
                                 final currentCategories = allCategories
-                                    .where((c) => c.type == _transactionType)
+                                    .where((c) => c.type == _transactionType && uniqueCategories.add(c.name))
                                     .toList();
 
                                 if (currentCategories.isEmpty) {
                                   return Container(
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      color: Colors.orange.withOpacity(0.1),
+                                      color: Colors.orange.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                                      border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                                     ),
                                     child: const Text('No categories found. Click Manage to add some!'),
                                   );
@@ -347,16 +349,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
                                 return Container(
                                   decoration: BoxDecoration(
-                                    color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+                                    color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
                                     borderRadius: BorderRadius.circular(16),
                                     border: Border.all(
                                       color: _selectedCategory != null 
-                                          ? primaryColor.withOpacity(0.5)
-                                          : Theme.of(context).dividerColor.withOpacity(0.3),
+                                          ? primaryColor.withValues(alpha: 0.5)
+                                          : Theme.of(context).dividerColor.withValues(alpha: 0.3),
                                     ),
                                     boxShadow: isDark ? null : [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.04),
+                                        color: Colors.black.withValues(alpha: 0.04),
                                         blurRadius: 10,
                                         offset: const Offset(0, 4),
                                       ),
@@ -396,7 +398,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                                 Container(
                                                   padding: const EdgeInsets.all(8),
                                                   decoration: BoxDecoration(
-                                                    color: primaryColor.withOpacity(0.1),
+                                                    color: primaryColor.withValues(alpha: 0.1),
                                                     borderRadius: BorderRadius.circular(8),
                                                   ),
                                                   child: Icon(
@@ -430,7 +432,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                                 Container(
                                                   padding: const EdgeInsets.all(8),
                                                   decoration: BoxDecoration(
-                                                    color: primaryColor.withOpacity(0.1),
+                                                    color: primaryColor.withValues(alpha: 0.1),
                                                     borderRadius: BorderRadius.circular(8),
                                                   ),
                                                   child: Icon(
@@ -467,7 +469,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: isDark ? null : [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
+                              color: Colors.black.withValues(alpha: 0.04),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -482,13 +484,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               margin: const EdgeInsets.all(12),
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: primaryColor.withOpacity(0.1),
+                                color: primaryColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Icon(Icons.edit_note, color: primaryColor, size: 20),
                             ),
                             filled: true,
-                            fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+                            fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
                               borderSide: BorderSide.none,
@@ -503,16 +505,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+                          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: _isPrivate 
-                                ? Colors.orange.withOpacity(0.5) 
-                                : Theme.of(context).dividerColor.withOpacity(0.3),
+                                ? Colors.orange.withValues(alpha: 0.5) 
+                                : Theme.of(context).dividerColor.withValues(alpha: 0.3),
                           ),
                           boxShadow: isDark ? null : [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
+                              color: Colors.black.withValues(alpha: 0.04),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -523,7 +525,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: _isPrivate ? Colors.orange.withOpacity(0.15) : Colors.blue.withOpacity(0.15),
+                                color: _isPrivate ? Colors.orange.withValues(alpha: 0.15) : Colors.blue.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
@@ -540,7 +542,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                   const SizedBox(height: 2),
                                   Text(
                                     _isPrivate ? 'Visible only to you' : 'Shared with family',
-                                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 12),
+                                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 12),
                                   ),
                                 ],
                               ),
@@ -548,7 +550,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             Switch(
                               value: _isPrivate,
                               onChanged: (val) => setState(() => _isPrivate = val),
-                              activeColor: Colors.orange,
+                              thumbColor: WidgetStateProperty.all(Colors.orange),
                             ),
                           ],
                         ),
@@ -565,7 +567,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   color: Theme.of(context).scaffoldBackgroundColor,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, -5),
                     ),
@@ -605,11 +607,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
           color: isSelected 
-              ? (isDark ? color.withOpacity(0.2) : Colors.white)
+              ? (isDark ? color.withValues(alpha: 0.2) : Colors.white)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           boxShadow: isSelected && !isDark 
-              ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 6, offset: const Offset(0, 2))] 
+              ? [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 6, offset: const Offset(0, 2))] 
               : null,
         ),
         child: Row(

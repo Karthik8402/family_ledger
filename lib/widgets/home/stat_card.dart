@@ -27,9 +27,9 @@ class StatCardWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
         boxShadow: [
-          BoxShadow(color: color.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 10)),
+          BoxShadow(color: color.withValues(alpha: 0.1), blurRadius: 15, offset: const Offset(0, 10)),
         ],
       ),
       child: Column(
@@ -43,13 +43,13 @@ class StatCardWidget extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                       color: color.withOpacity(0.1),
+                       color: color.withValues(alpha: 0.1),
                        borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(icon, color: color),
                   ),
                   const SizedBox(width: 12),
-                  Text(title, style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.7), fontSize: 16, fontWeight: FontWeight.w600)),
+                  Text(title, style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.7), fontSize: 16, fontWeight: FontWeight.w600)),
                 ],
               ),
             ],
@@ -62,20 +62,20 @@ class StatCardWidget extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'Shared (Family)',
-            style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
+            style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5), fontSize: 12),
           ),
           
           if (privateAmount > 0) ...[
             const SizedBox(height: 20),
-            Divider(color: theme.dividerColor.withOpacity(0.5)),
+            Divider(color: theme.dividerColor.withValues(alpha: 0.5)),
             const SizedBox(height: 12),
              Row(
               children: [
-                Icon(Icons.person, color: color.withOpacity(0.8), size: 16),
+                Icon(Icons.person, color: color.withValues(alpha: 0.8), size: 16),
                 const SizedBox(width: 8),
                 Text(
                   'My Private: ₹${privateAmount.toStringAsFixed(2)}', 
-                  style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.8), fontWeight: FontWeight.w500),
+                  style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.8), fontWeight: FontWeight.w500),
                 ),
               ],
             )

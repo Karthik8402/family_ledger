@@ -140,7 +140,7 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.15),
+                      color: Colors.white.withValues(alpha: 0.15),
                     ),
                     child: const Icon(
                       Icons.family_restroom,
@@ -166,7 +166,7 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
                     'Create a new family or join an existing one',
                     style: TextStyle(
                       fontSize: 15,
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withValues(alpha: 0.8),
                     ),
                     textAlign: TextAlign.center,
                   ).animate().fadeIn(delay: 300.ms),
@@ -176,7 +176,7 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
                   // Toggle Tabs
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
+                      color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     padding: const EdgeInsets.all(4),
@@ -235,11 +235,11 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: isDark 
-                          ? Colors.white.withOpacity(0.08)
-                          : Colors.white.withOpacity(0.2),
+                          ? Colors.white.withValues(alpha: 0.08)
+                          : Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         width: 1.5,
                       ),
                     ),
@@ -274,7 +274,7 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
         const SizedBox(height: 8),
         Text(
           'You\'ll get a code to share with family members',
-          style: TextStyle(color: Colors.white.withOpacity(0.7)),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
@@ -284,19 +284,19 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
           textCapitalization: TextCapitalization.words,
           decoration: InputDecoration(
             labelText: 'Family Name',
-            labelStyle: TextStyle(color: Colors.white.withOpacity(0.8)),
+            labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
             hintText: 'e.g., Kumar Family',
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
             prefixIcon: const Icon(Icons.home, color: Colors.white70),
             filled: true,
-            fillColor: Colors.white.withOpacity(0.1),
+            fillColor: Colors.white.withValues(alpha: 0.1),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
@@ -353,7 +353,7 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
         const SizedBox(height: 8),
         Text(
           'Enter the 6-character code from your family',
-          style: TextStyle(color: Colors.white.withOpacity(0.7)),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
@@ -375,19 +375,19 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
           decoration: InputDecoration(
             hintText: 'ABC123',
             hintStyle: TextStyle(
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: 0.3),
               letterSpacing: 8,
             ),
             counterText: '',
             filled: true,
-            fillColor: Colors.white.withOpacity(0.1),
+            fillColor: Colors.white.withValues(alpha: 0.1),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),

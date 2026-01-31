@@ -32,7 +32,7 @@ class DateSelectorWidget extends StatelessWidget {
             ),
             Text(
               DateFormat('MMMM yyyy').format(DateTime(selectedYear, selectedMonth)),
-              style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+              style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
             ),
           ],
         ),

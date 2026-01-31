@@ -28,7 +28,7 @@ class _StatsScreenState extends State<StatsScreen> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this); // Added Compare tab
   }
 
   @override
@@ -73,10 +73,10 @@ class _StatsScreenState extends State<StatsScreen> with SingleTickerProviderStat
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
               borderRadius: BorderRadius.circular(16),
               boxShadow: isDark ? [] : [
-                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
               ],
             ),
             child: TabBar(
@@ -94,6 +94,7 @@ class _StatsScreenState extends State<StatsScreen> with SingleTickerProviderStat
                 Tab(text: 'Overview'),
                 Tab(text: 'Categories'),
                 Tab(text: 'Trends'),
+                Tab(text: 'Compare'),
               ],
             ),
           ),
@@ -126,6 +127,7 @@ class _StatsScreenState extends State<StatsScreen> with SingleTickerProviderStat
                   _buildOverviewTab(context, monthlyTransactions, isDark, primaryColor),
                   _buildCategoriesTab(context, monthlyTransactions, budgets, isDark, primaryColor),
                   _buildTrendsTab(context, monthlyTransactions, isDark, primaryColor),
+                  _buildCompareTab(context, allTransactions, isDark, primaryColor),
                 ],
               );
             }
@@ -145,7 +147,6 @@ class _StatsScreenState extends State<StatsScreen> with SingleTickerProviderStat
         .where((t) => t.type == TransactionModel.typeExpense && t.visibility == TransactionModel.visibilityShared)
         .fold(0.0, (sum, t) => sum + t.amount);
 
-    final balance = income - expense;
     final savingsRate = income > 0 ? ((income - expense) / income * 100).clamp(0, 100) : 0.0;
 
     // Contributions logic (Income only)
@@ -169,38 +170,85 @@ class _StatsScreenState extends State<StatsScreen> with SingleTickerProviderStat
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        // Main Balance Card with Glassmorphism
-        Container(
-          padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: balance >= 0 
-                ? [const Color(0xFF667eea), const Color(0xFF764ba2)] 
-                : [const Color(0xFFf093fb), const Color(0xFFf5576c)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        // Income & Expense Cards
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.trending_up, color: Colors.green, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Income',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      '₹${NumberFormat('#,##,###').format(income)}',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: (balance >= 0 ? const Color(0xFF667eea) : const Color(0xFFf5576c)).withOpacity(0.4),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.trending_down, color: Colors.red, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Expense',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      '₹${NumberFormat('#,##,###').format(expense)}',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-          child: Column(
-            children: [
-              // Income & Expense Row (Net Balance removed)
-              Row(
-                children: [
-                  Expanded(child: _buildStatBox(Icons.trending_down, 'Income', income, Colors.greenAccent.shade200)),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildStatBox(Icons.trending_up, 'Expense', expense, Colors.redAccent.shade100)),
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ).animate().slideY(begin: 0.1, end: 0, duration: 500.ms, curve: Curves.easeOutQuart).fadeIn(),
 
         const SizedBox(height: 24),
@@ -271,42 +319,17 @@ class _StatsScreenState extends State<StatsScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildStatBox(IconData icon, String label, double amount, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: 18),
-              const SizedBox(width: 6),
-              Text(label, style: const TextStyle(color: Colors.white70, fontSize: 13)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '₹${NumberFormat('#,##,###').format(amount)}',
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildGlassCard({required bool isDark, required Widget child}) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
         boxShadow: isDark ? [] : [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: child,
@@ -333,7 +356,7 @@ class _StatsScreenState extends State<StatsScreen> with SingleTickerProviderStat
                 children: [
                   CircleAvatar(
                     radius: 14,
-                    backgroundColor: color.withOpacity(0.15),
+                    backgroundColor: color.withValues(alpha: 0.15),
                     child: Text(e.key[0].toUpperCase(), style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
                   const SizedBox(width: 10),
@@ -414,7 +437,7 @@ class _StatsScreenState extends State<StatsScreen> with SingleTickerProviderStat
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade100),
             ),
@@ -425,7 +448,7 @@ class _StatsScreenState extends State<StatsScreen> with SingleTickerProviderStat
                     Container(
                       width: 40, height: 40,
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.15),
+                        color: color.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Center(child: Text(_getCategoryEmoji(categoryName), style: const TextStyle(fontSize: 18))),
@@ -581,7 +604,7 @@ class _StatsScreenState extends State<StatsScreen> with SingleTickerProviderStat
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.1),
+                      color: primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text('$daysInMonth days', style: TextStyle(color: primaryColor, fontSize: 12, fontWeight: FontWeight.w600)),
@@ -646,7 +669,7 @@ class _StatsScreenState extends State<StatsScreen> with SingleTickerProviderStat
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade100),
       ),
@@ -661,5 +684,434 @@ class _StatsScreenState extends State<StatsScreen> with SingleTickerProviderStat
         ],
       ),
     );
+  }
+
+  // --- TAB 4: YEAR-OVER-YEAR COMPARISON ---
+  Widget _buildCompareTab(BuildContext context, List<TransactionModel> allTransactions, bool isDark, Color primaryColor) {
+    final currentYear = widget.year;
+    final previousYear = widget.year - 1;
+    final currentMonth = widget.month;
+
+    // Filter transactions for current and previous year (same month)
+    final currentYearTxns = allTransactions.where((t) => 
+      t.date.month == currentMonth && 
+      t.date.year == currentYear && 
+      t.tabId == null &&
+      t.visibility == TransactionModel.visibilityShared
+    ).toList();
+
+    final previousYearTxns = allTransactions.where((t) => 
+      t.date.month == currentMonth && 
+      t.date.year == previousYear && 
+      t.tabId == null &&
+      t.visibility == TransactionModel.visibilityShared
+    ).toList();
+
+    // Calculate totals
+    final currentIncome = currentYearTxns
+        .where((t) => t.type == TransactionModel.typeIncome)
+        .fold(0.0, (sum, t) => sum + t.amount);
+    final currentExpense = currentYearTxns
+        .where((t) => t.type == TransactionModel.typeExpense)
+        .fold(0.0, (sum, t) => sum + t.amount);
+
+    final previousIncome = previousYearTxns
+        .where((t) => t.type == TransactionModel.typeIncome)
+        .fold(0.0, (sum, t) => sum + t.amount);
+    final previousExpense = previousYearTxns
+        .where((t) => t.type == TransactionModel.typeExpense)
+        .fold(0.0, (sum, t) => sum + t.amount);
+
+    // Calculate percentage changes
+    double incomeChange = previousIncome > 0 
+        ? ((currentIncome - previousIncome) / previousIncome * 100) 
+        : (currentIncome > 0 ? 100 : 0);
+    double expenseChange = previousExpense > 0 
+        ? ((currentExpense - previousExpense) / previousExpense * 100) 
+        : (currentExpense > 0 ? 100 : 0);
+
+    // Category comparison for expenses
+    final Map<String, double> currentCategories = {};
+    final Map<String, double> previousCategories = {};
+    
+    for (var t in currentYearTxns.where((t) => t.type == TransactionModel.typeExpense)) {
+      currentCategories[t.category] = (currentCategories[t.category] ?? 0) + t.amount;
+    }
+    for (var t in previousYearTxns.where((t) => t.type == TransactionModel.typeExpense)) {
+      previousCategories[t.category] = (previousCategories[t.category] ?? 0) + t.amount;
+    }
+
+    // All unique categories
+    final allCategories = {...currentCategories.keys, ...previousCategories.keys}.toList()..sort();
+
+    final monthName = DateFormat('MMMM').format(DateTime(currentYear, currentMonth));
+
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        // Header
+        Text(
+          '$monthName Comparison',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '$currentYear vs $previousYear',
+          style: TextStyle(
+            fontSize: 14,
+            color: isDark ? Colors.white54 : Colors.black54,
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Main Comparison Cards
+        Row(
+          children: [
+            Expanded(
+              child: _buildComparisonCard(
+                isDark: isDark,
+                icon: Icons.trending_up,
+                title: 'Income',
+                currentValue: currentIncome,
+                previousValue: previousIncome,
+                percentChange: incomeChange,
+                isPositiveGood: true,
+                primaryColor: Colors.green,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildComparisonCard(
+                isDark: isDark,
+                icon: Icons.trending_down,
+                title: 'Expenses',
+                currentValue: currentExpense,
+                previousValue: previousExpense,
+                percentChange: expenseChange,
+                isPositiveGood: false,
+                primaryColor: Colors.red,
+              ),
+            ),
+          ],
+        ).animate().slideY(begin: 0.1, end: 0, duration: 400.ms).fadeIn(),
+
+        const SizedBox(height: 24),
+
+        // Net Savings Comparison
+        _buildGlassCard(
+          isDark: isDark,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Net Savings',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildYearColumn(
+                      year: previousYear,
+                      amount: previousIncome - previousExpense,
+                      isDark: isDark,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Icon(
+                      Icons.arrow_forward,
+                      color: isDark ? Colors.white38 : Colors.black38,
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildYearColumn(
+                      year: currentYear,
+                      amount: currentIncome - currentExpense,
+                      isDark: isDark,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ).animate().slideY(begin: 0.1, end: 0, delay: 100.ms, duration: 400.ms).fadeIn(),
+
+        const SizedBox(height: 24),
+
+        // Category Comparison
+        if (allCategories.isNotEmpty) ...[
+          Text(
+            'Category Breakdown',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...allCategories.asMap().entries.map((entry) {
+            final category = entry.value;
+            final current = currentCategories[category] ?? 0;
+            final previous = previousCategories[category] ?? 0;
+            final change = previous > 0 
+                ? ((current - previous) / previous * 100) 
+                : (current > 0 ? 100.0 : 0.0);
+
+            return _buildCategoryComparisonRow(
+              category: category,
+              currentAmount: current,
+              previousAmount: previous,
+              percentChange: change,
+              isDark: isDark,
+              delay: 150 + (entry.key * 50),
+            );
+          }),
+        ] else
+          _buildGlassCard(
+            isDark: isDark,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.compare_arrows,
+                      size: 48,
+                      color: isDark ? Colors.white24 : Colors.grey.shade300,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No data available for comparison',
+                      style: TextStyle(
+                        color: isDark ? Colors.white54 : Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ).animate().fadeIn(),
+      ],
+    );
+  }
+
+  Widget _buildComparisonCard({
+    required bool isDark,
+    required IconData icon,
+    required String title,
+    required double currentValue,
+    required double previousValue,
+    required double percentChange,
+    required bool isPositiveGood,
+    required Color primaryColor,
+  }) {
+    final isPositive = percentChange >= 0;
+    final isGood = isPositiveGood ? isPositive : !isPositive;
+    final changeColor = isGood ? Colors.green : Colors.red;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: primaryColor, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white70 : Colors.black54,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            '₹${NumberFormat('#,##,###').format(currentValue)}',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: changeColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isPositive ? Icons.arrow_upward : Icons.arrow_downward,
+                  color: changeColor,
+                  size: 14,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '${isPositive ? '+' : ''}${percentChange.toStringAsFixed(1)}%',
+                  style: TextStyle(
+                    color: changeColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Last year: ₹${NumberFormat.compact().format(previousValue)}',
+            style: TextStyle(
+              color: isDark ? Colors.white38 : Colors.black38,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildYearColumn({
+    required int year,
+    required double amount,
+    required bool isDark,
+  }) {
+    final isPositive = amount >= 0;
+    return Column(
+      children: [
+        Text(
+          '$year',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white54 : Colors.black54,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '₹${NumberFormat('#,##,###').format(amount.abs())}',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: isPositive ? Colors.green : Colors.red,
+          ),
+        ),
+        Text(
+          isPositive ? 'Saved' : 'Deficit',
+          style: TextStyle(
+            fontSize: 12,
+            color: isDark ? Colors.white38 : Colors.black38,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoryComparisonRow({
+    required String category,
+    required double currentAmount,
+    required double previousAmount,
+    required double percentChange,
+    required bool isDark,
+    required int delay,
+  }) {
+    final isPositive = percentChange >= 0;
+    final changeColor = isPositive ? Colors.red : Colors.green; // For expenses, decrease is good
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade100),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Text(_getCategoryEmoji(category), style: const TextStyle(fontSize: 18)),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  category,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Was ₹${NumberFormat.compact().format(previousAmount)}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white38 : Colors.black38,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '₹${NumberFormat.compact().format(currentAmount)}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4),
+              if (previousAmount > 0 || currentAmount > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: changeColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    '${isPositive ? '+' : ''}${percentChange.toStringAsFixed(0)}%',
+                    style: TextStyle(
+                      color: changeColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    ).animate().slideX(begin: 0.1, end: 0, delay: delay.ms, duration: 350.ms).fadeIn();
   }
 }

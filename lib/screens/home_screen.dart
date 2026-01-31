@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart'; // Animation Import
 import '../services/firestore_service.dart';
 import '../services/auth_service.dart';
@@ -18,6 +17,7 @@ import '../widgets/home/date_selector.dart';
 import '../utils/toast_utils.dart';
 import '../models/filter_model.dart';
 import '../widgets/filter_sheet.dart';
+import '../widgets/connectivity_banner.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -192,8 +192,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         // Update Controller safely
         _updateTabController(totalTabs); // Only recreates if length changes
 
-        return Scaffold(
-          appBar: _buildAppBar(trackingTabs),
+        return ConnectivityBanner(
+          child: Scaffold(
+            appBar: _buildAppBar(trackingTabs),
           body: StreamBuilder<List<TransactionModel>>(
             stream: firestoreService.getTransactions(),
             builder: (context, txnSnapshot) {
@@ -281,6 +282,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Colors.white,
           ).animate().scale(delay: 500.ms),
+          ),
         );
       },
     );
@@ -517,7 +519,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
-                      BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 10)),
+                      BoxShadow(color: Colors.blue.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 10)),
                     ],
                   ),
                   child: Column(
@@ -686,7 +688,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       children: [
         Icon(icon, color: color, size: 28),
         const SizedBox(height: 4),
-        Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7))),
+        Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
         const SizedBox(height: 4),
         Text(
           '₹${amount.toStringAsFixed(2)}',
@@ -701,9 +703,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -725,14 +727,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               Column(
                 children: [
                   Text('$count', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: color)),
-                  Text('Transactions', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                  Text('Transactions', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
                 ],
               ),
-              Container(width: 1, height: 40, color: color.withOpacity(0.3)),
+              Container(width: 1, height: 40, color: color.withValues(alpha: 0.3)),
               Column(
                 children: [
                   Text('₹${total.toStringAsFixed(2)}', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: color)),
-                  Text('Total Amount', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                  Text('Total Amount', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
                 ],
               ),
             ],
@@ -830,14 +832,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [color.withOpacity(0.9), color.withOpacity(0.7)],
+                  colors: [color.withValues(alpha: 0.9), color.withValues(alpha: 0.7)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: color.withOpacity(0.4),
+                    color: color.withValues(alpha: 0.4),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -849,7 +851,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(icon, color: Colors.white, size: 20),

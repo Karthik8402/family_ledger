@@ -413,8 +413,10 @@ class FirestoreService {
 
     final batch = _db.batch();
     for (var cat in defaults) {
-      final docRef = ref.doc();
-      batch.set(docRef, cat.toMap());
+      // Use deterministic ID to prevent duplicates during offline/online sync
+      final docId = 'default_${cat.name.toLowerCase().replaceAll(' ', '_')}';
+      final docRef = ref.doc(docId);
+      batch.set(docRef, cat.toMap(), SetOptions(merge: true));
     }
     await batch.commit();
   }

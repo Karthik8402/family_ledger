@@ -47,9 +47,9 @@ class TransactionItemWidget extends StatelessWidget {
                 onPressed: (_) => onEdit?.call(),
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
-                child: Column(
+                child: const Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Icon(Icons.edit, size: 22),
                     SizedBox(height: 4),
                     Text('Edit', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
@@ -60,9 +60,9 @@ class TransactionItemWidget extends StatelessWidget {
                 onPressed: (_) => onDelete?.call(),
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
-                child: Column(
+                child: const Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Icon(Icons.delete, size: 22),
                     SizedBox(height: 4),
                     Text('Delete', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
@@ -74,14 +74,14 @@ class TransactionItemWidget extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               color: theme.cardTheme.color,
-              border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+              border: Border.all(color: theme.dividerColor.withValues(alpha: 0.05)),
             ),
             child: ListTile(
               contentPadding: const EdgeInsets.all(16),
               leading: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isIncome ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                  color: isIncome ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -102,7 +102,7 @@ class TransactionItemWidget extends StatelessWidget {
                       children: [
                         Text(
                           DateFormat('MMM d').format(transaction.date),
-                          style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5), fontSize: 13),
+                          style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5), fontSize: 13),
                         ),
                         if (isPrivate) ...[
                           const SizedBox(width: 6),
@@ -112,11 +112,11 @@ class TransactionItemWidget extends StatelessWidget {
                               color: theme.colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: Text('Private', style: TextStyle(fontSize: 10, color: theme.colorScheme.onSurface.withOpacity(0.6))),
+                            child: Text('Private', style: TextStyle(fontSize: 10, color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
                           ),
                         ] else if (transaction.userName.isNotEmpty) ...[
                            const SizedBox(width: 6),
-                           Text('• ${transaction.userName.split('@')[0]}', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
+                           Text('• ${transaction.userName.split('@')[0]}', style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5), fontSize: 12)),
                         ],
                       ],
                     ),
@@ -127,13 +127,13 @@ class TransactionItemWidget extends StatelessWidget {
                           Icon(
                             Icons.sticky_note_2_outlined,
                             size: 12,
-                            color: theme.colorScheme.primary.withOpacity(0.7),
+                            color: theme.colorScheme.primary.withValues(alpha: 0.7),
                           ),
                           const SizedBox(width: 4),
                           Text(
                             'Note: ',
                             style: TextStyle(
-                              color: theme.colorScheme.primary.withOpacity(0.7),
+                              color: theme.colorScheme.primary.withValues(alpha: 0.7),
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
@@ -142,7 +142,7 @@ class TransactionItemWidget extends StatelessWidget {
                             child: Text(
                               transaction.note,
                               style: TextStyle(
-                                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                                 fontSize: 12,
                                 fontStyle: FontStyle.italic,
                               ),

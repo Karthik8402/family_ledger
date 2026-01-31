@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'services/firestore_service.dart';
 import 'services/auth_service.dart';
 import 'providers/theme_provider.dart';
 import 'auth_wrapper.dart';
+import 'widgets/connectivity_banner.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -20,6 +22,13 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Enable Firestore offline persistence
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED, // Unlimited cache for both web and mobile
+  );
+  
   runApp(const MyApp());
 }
 
@@ -49,11 +58,13 @@ class MyApp extends StatelessWidget {
             darkTheme: ThemeProvider.darkTheme,
             themeMode: themeProvider.themeMode,
             builder: (context, child) {
-              return AnimatedTheme(
-                data: currentTheme,
-                duration: const Duration(milliseconds: 400),
-                curve: Curves.easeInOut,
-                child: child!,
+              return ConnectivityBanner(
+                child: AnimatedTheme(
+                  data: currentTheme,
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeInOut,
+                  child: child!,
+                ),
               );
             },
             home: const AuthWrapper(),

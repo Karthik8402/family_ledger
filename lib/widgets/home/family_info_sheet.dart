@@ -106,7 +106,7 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.3),
+              color: Colors.grey.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -119,7 +119,7 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: widget.primaryColor.withOpacity(0.1),
+                      color: widget.primaryColor.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(Icons.family_restroom, size: 40, color: widget.primaryColor),
@@ -155,7 +155,7 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: widget.primaryColor.withOpacity(0.1),
+              color: widget.primaryColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.family_restroom, size: 40, color: widget.primaryColor),
@@ -173,9 +173,9 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: widget.primaryColor.withOpacity(0.1),
+              color: widget.primaryColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: widget.primaryColor.withOpacity(0.3)),
+              border: Border.all(color: widget.primaryColor.withValues(alpha: 0.3)),
             ),
             child: Column(
               children: [
@@ -235,7 +235,7 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Text('Admin Mode', style: TextStyle(fontSize: 11, color: Colors.blue, fontWeight: FontWeight.bold)),
@@ -258,7 +258,7 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: widget.isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
+        color: widget.isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -268,7 +268,7 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
             height: 36,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: widget.primaryColor.withOpacity(0.15),
+              color: widget.primaryColor.withValues(alpha: 0.15),
             ),
             clipBehavior: Clip.antiAlias,
             child: member.photoUrl != null && member.photoUrl!.isNotEmpty
@@ -304,7 +304,7 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.15),
+                          color: Colors.green.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: const Text('You', style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)),
@@ -323,7 +323,7 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.amber.withOpacity(0.2),
+                color: Colors.amber.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Text(
@@ -344,7 +344,16 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
       icon: Icon(Icons.more_vert, color: Colors.grey.shade600, size: 20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       onSelected: (value) async {
+        if (!mounted) return;
+        Navigator.pop(context); // Close bottom sheet? Or just ensuring close?
+        // Actually, PopupMenuButton closes itself.
+        // If this pop is for the bottom sheet, then `mounted` check is good.
+        // But let's look at the logic. `Navigator.pop(context)` is called immediately.
+        // If it closes the sheet, `mounted` becomes false?
+        // Let's remove this `Navigator.pop(context)` if it's redundant (PopupMenu closes itself), OR keep it if it closes the sheet. 
+        // Assuming it closes the sheet.
         Navigator.pop(context);
+
         
         if (value == 'transfer') {
           final confirm = await showDialog<bool>(
@@ -364,8 +373,10 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
           if (confirm == true) {
             try {
               await widget.firestoreService.transferOwnership(_family!.id, member.id, widget.userId);
+              if (!mounted) return;
               ToastUtils.showSuccess(widget.parentContext, 'Ownership transferred!');
             } catch (e) {
+              if (!mounted) return;
               ToastUtils.showError(widget.parentContext, 'Error: $e');
             }
           }
@@ -387,8 +398,10 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
           if (confirm == true) {
             try {
               await widget.firestoreService.removeFamilyMember(_family!.id, member.id, widget.userId);
+              if (!mounted) return;
               ToastUtils.showWarning(widget.parentContext, '${member.name} removed');
             } catch (e) {
+              if (!mounted) return;
               ToastUtils.showError(widget.parentContext, 'Error: $e');
             }
           }

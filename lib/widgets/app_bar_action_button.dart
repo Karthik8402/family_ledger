@@ -32,7 +32,7 @@ class _AppBarActionButtonState extends State<AppBarActionButton>
   late Animation<double> _scaleAnimation;
   late Animation<double> _glowAnimation;
   bool _isHovered = false;
-  bool _isPressed = false;
+
 
   @override
   void initState() {
@@ -56,17 +56,14 @@ class _AppBarActionButtonState extends State<AppBarActionButton>
   }
 
   void _onTapDown(TapDownDetails details) {
-    setState(() => _isPressed = true);
     _controller.forward();
   }
 
   void _onTapUp(TapUpDetails details) {
-    setState(() => _isPressed = false);
     _controller.reverse();
   }
 
   void _onTapCancel() {
-    setState(() => _isPressed = false);
     _controller.reverse();
   }
 
@@ -78,26 +75,26 @@ class _AppBarActionButtonState extends State<AppBarActionButton>
 
     // Theme-aware colors
     final bgColor = widget.isActive
-        ? primaryColor.withOpacity(isDark ? 0.2 : 0.12)
+        ? primaryColor.withValues(alpha: isDark ? 0.2 : 0.12)
         : (_isHovered
-            ? (isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.08))
-            : (isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.04)));
+            ? (isDark ? Colors.white.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.08))
+            : (isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.04)));
 
     final borderColor = widget.isActive
-        ? primaryColor.withOpacity(0.3)
+        ? primaryColor.withValues(alpha: 0.3)
         : (_isHovered
-            ? (isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.1))
-            : (isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.04)));
+            ? (isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.1))
+            : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04)));
 
     final iconColor = widget.isActive
         ? primaryColor
         : (_isHovered
             ? theme.colorScheme.onSurface
-            : theme.colorScheme.onSurface.withOpacity(0.75));
+            : theme.colorScheme.onSurface.withValues(alpha: 0.75));
 
     final glowColor = widget.isActive
-        ? primaryColor.withOpacity(0.25)
-        : primaryColor.withOpacity(_isHovered ? 0.15 : 0);
+        ? primaryColor.withValues(alpha: 0.25)
+        : primaryColor.withValues(alpha: _isHovered ? 0.15 : 0);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -215,7 +212,7 @@ class _ThemeToggleButtonState extends State<ThemeToggleButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _rotationAnimation;
-  late Animation<double> _scaleAnimation;
+
   bool _isHovered = false;
 
   @override
@@ -229,10 +226,7 @@ class _ThemeToggleButtonState extends State<ThemeToggleButton>
       begin: 0.0,
       end: 1.0,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.15,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
 
     if (widget.isDark) {
       _controller.value = 1.0;
@@ -259,9 +253,9 @@ class _ThemeToggleButtonState extends State<ThemeToggleButton>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final sunColor = const Color(0xFFFFB300);
-    final moonColor = const Color(0xFF90CAF9);
+
+    const sunColor = Color(0xFFFFB300);
+    const moonColor = Color(0xFF90CAF9);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -283,25 +277,25 @@ class _ThemeToggleButtonState extends State<ThemeToggleButton>
                   gradient: LinearGradient(
                     colors: widget.isDark
                         ? [
-                            const Color(0xFF1a1a2e).withOpacity(_isHovered ? 0.9 : 0.7),
-                            const Color(0xFF16213e).withOpacity(_isHovered ? 0.9 : 0.7),
+                            const Color(0xFF1a1a2e).withValues(alpha: _isHovered ? 0.9 : 0.7),
+                            const Color(0xFF16213e).withValues(alpha: _isHovered ? 0.9 : 0.7),
                           ]
                         : [
-                            const Color(0xFFFFF8E1).withOpacity(_isHovered ? 0.9 : 0.7),
-                            const Color(0xFFFFECB3).withOpacity(_isHovered ? 0.9 : 0.7),
+                            const Color(0xFFFFF8E1).withValues(alpha: _isHovered ? 0.9 : 0.7),
+                            const Color(0xFFFFECB3).withValues(alpha: _isHovered ? 0.9 : 0.7),
                           ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: color.withOpacity(_isHovered ? 0.5 : 0.3),
+                    color: color.withValues(alpha: _isHovered ? 0.5 : 0.3),
                     width: 1.2,
                   ),
                   boxShadow: [
                     if (_isHovered)
                       BoxShadow(
-                        color: color.withOpacity(0.3),
+                        color: color.withValues(alpha: 0.3),
                         blurRadius: 12,
                         spreadRadius: 0,
                       ),
