@@ -72,7 +72,6 @@ class _AnimatedPieChartState extends State<AnimatedPieChart> {
           centerSpaceRadius: 40,
           sections: sortedEntries.asMap().entries.map((entry) {
             final isTouched = entry.key == touchedIndex;
-            final fontSize = isTouched ? 25.0 : 12.0;
             final radius = isTouched ? 110.0 : 100.0;
             final percent = (entry.value.value / total) * 100;
             final color = chartColors[entry.key % chartColors.length];
@@ -85,10 +84,14 @@ class _AnimatedPieChartState extends State<AnimatedPieChart> {
             return PieChartSectionData(
               color: color,
               value: value,
-              title: _isPlaying ? '${percent.toStringAsFixed(0)}%' : '',
+              title: _isPlaying
+                  ? (isTouched
+                      ? '${entry.value.key}\n${percent.toStringAsFixed(0)}%'
+                      : '${percent.toStringAsFixed(0)}%')
+                  : '',
               radius: radius,
               titleStyle: TextStyle(
-                fontSize: fontSize,
+                fontSize: isTouched ? 14.0 : 12.0,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
                 shadows: [Shadow(color: Colors.black45, blurRadius: 2)],

@@ -125,6 +125,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         width: 120,
                         height: 120,
                         fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(Icons.account_balance_wallet,
+                              size: 80, color: Colors.white);
+                        },
                       ),
                     ),
                   )

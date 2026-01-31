@@ -19,16 +19,20 @@ class AuthWrapper extends StatelessWidget {
       stream: authService.authStateChanges,
       initialData: authService.currentUser,
       builder: (context, authSnapshot) {
-        
         if (authSnapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          // debugPrint('Auth: Waiting for auth state...');
+          return const Scaffold(
+              backgroundColor: Colors.white,
+              body:
+                  Center(child: CircularProgressIndicator(color: Colors.teal)));
         }
-        
+
+        // debugPrint('Auth: Snapshot hasData=${authSnapshot.hasData}');
         if (authSnapshot.hasData) {
           // User is logged in, check if they have a family
           return _FamilyCheckWrapper(userId: authSnapshot.data!.id);
         }
-        
+
         return const LoginScreen();
       },
     );
@@ -37,28 +41,29 @@ class AuthWrapper extends StatelessWidget {
 
 class _FamilyCheckWrapper extends StatelessWidget {
   final String userId;
-  
+
   const _FamilyCheckWrapper({required this.userId});
 
   @override
   Widget build(BuildContext context) {
-    final firestoreService = Provider.of<FirestoreService>(context, listen: false);
-    
+    final firestoreService =
+        Provider.of<FirestoreService>(context, listen: false);
+
     return StreamBuilder<UserModel?>(
       stream: firestoreService.streamUserProfile(userId),
       builder: (context, userSnapshot) {
-        
         if (userSnapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+              body: Center(child: CircularProgressIndicator()));
         }
-        
+
         final user = userSnapshot.data;
-        
+
         // If user profile doesn't exist or no family, show family setup
         if (user == null || user.familyId == null || user.familyId!.isEmpty) {
           return const FamilySetupScreen();
         }
-        
+
         // User has a family, show home with biometric check
         return const BiometricWrapper(child: HomeScreen());
       },

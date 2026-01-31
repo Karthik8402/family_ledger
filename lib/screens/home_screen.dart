@@ -43,6 +43,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   FilterModel _advancedFilter = FilterModel.empty;
   List<UserModel> _familyMembers = [];
   List<TransactionModel> _allTransactions = [];
+  bool _isAddingTab = false;
 
   @override
   void initState() {
@@ -107,20 +108,36 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             oldIndex < newLength ? oldIndex : 0, // Don't start on + tab
       );
       _tabController!.addListener(() {
-        // If user taps the "+" tab, show dialog and go back
-        if (_tabController!.index == actualLength - 1) {
-          // Go back to previous tab first
-          _tabController!.animateTo(oldIndex < newLength ? oldIndex : 0);
-          _showAddTabDialog();
-        }
         if (!_tabController!.indexIsChanging) setState(() {});
+
+        // If user taps the "+" tab, show dialog
+        if (_tabController!.index == actualLength - 1 && !_isAddingTab) {
+          _handleNewTabSelection();
+        }
       });
     }
   }
 
-  void _showAddTabDialog() {
+  Future<void> _handleNewTabSelection() async {
+    _isAddingTab = true;
+    await _showAddTabDialog();
+
+    if (mounted && _tabController != null) {
+      // Go back to previous tab or home
+      int target = _tabController!.previousIndex;
+      // Safety check if previous index is somehow invalid or same
+      if (target >= _tabController!.length - 1 || target < 0) target = 0;
+
+      _tabController!.animateTo(target);
+      _isAddingTab = false;
+    } else {
+      _isAddingTab = false;
+    }
+  }
+
+  Future<void> _showAddTabDialog() async {
     final controller = TextEditingController();
-    showDialog(
+    await showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('New Tracking Tab'),

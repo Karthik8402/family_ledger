@@ -110,7 +110,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: const Text('Require biometrics to open app'),
               value: _isBiometricsEnabled,
               onChanged: _toggleBiometrics,
-              activeColor: Theme.of(context).primaryColor,
+              activeColor: Colors.teal,
+              activeTrackColor: Colors.teal.withValues(alpha: 0.4),
             )
           else
             const ListTile(

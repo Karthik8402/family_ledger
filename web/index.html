@@ -21,56 +21,13 @@
   <title>Family Ledger</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- Google Identity Services -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
 </head>
 
 <body>
   <script src="flutter_bootstrap.js" async></script>
 
-  <!-- Google One Tap Initialization -->
-  <script>
-    window.onload = function () {
-      // Wait for Google Identity Services to load
-      if (typeof google !== 'undefined' && google.accounts) {
-        initializeOneTap();
-      } else {
-        // Retry after a short delay if GSI not loaded yet
-        setTimeout(function () {
-          if (typeof google !== 'undefined' && google.accounts) {
-            initializeOneTap();
-          }
-        }, 1000);
-      }
-    };
 
-    function initializeOneTap() {
-      google.accounts.id.initialize({
-        client_id: '45123277071-3fbv8d3apdpdrssviods7v7jljjch3fq.apps.googleusercontent.com',
-        callback: handleCredentialResponse,
-        auto_select: true,
-        cancel_on_tap_outside: false
-      });
-
-      // Show the One Tap prompt
-      google.accounts.id.prompt((notification) => {
-        console.log('One Tap notification:', notification);
-        if (notification.isNotDisplayed()) {
-          console.log('One Tap not displayed:', notification.getNotDisplayedReason());
-        }
-        if (notification.isSkippedMoment()) {
-          console.log('One Tap skipped:', notification.getSkippedReason());
-        }
-      });
-    }
-
-    function handleCredentialResponse(response) {
-      console.log('Google One Tap response received');
-      // The credential will be handled by Flutter's google_sign_in plugin
-      // This callback fires when user selects an account from One Tap
-      // Flutter will detect the signed-in state via signInSilently
-    }
-  </script>
 </body>
 
 </html>

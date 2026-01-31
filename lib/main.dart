@@ -18,7 +18,7 @@ void main() async {
   } catch (e) {
     debugPrint('Warning: Failed to load .env file: $e');
   }
-  
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -26,9 +26,10 @@ void main() async {
   // Enable Firestore offline persistence
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
-    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED, // Unlimited cache for both web and mobile
+    cacheSizeBytes: Settings
+        .CACHE_SIZE_UNLIMITED, // Unlimited cache for both web and mobile
   );
-  
+
   runApp(const MyApp());
 }
 
@@ -47,10 +48,10 @@ class MyApp extends StatelessWidget {
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
-          final currentTheme = themeProvider.isDarkMode 
-              ? ThemeProvider.darkTheme 
+          final currentTheme = themeProvider.isDarkMode
+              ? ThemeProvider.darkTheme
               : ThemeProvider.lightTheme;
-          
+
           return MaterialApp(
             title: 'Family Ledger',
             debugShowCheckedModeBanner: false,
