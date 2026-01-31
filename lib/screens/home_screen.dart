@@ -9,6 +9,7 @@ import '../models/tracking_tab_model.dart';
 import '../providers/theme_provider.dart';
 import 'add_transaction_screen.dart';
 import 'stats_screen.dart';
+import 'settings_screen.dart';
 import '../widgets/app_bar_action_button.dart';
 import '../widgets/home/family_info_sheet.dart';
 import '../widgets/home/transaction_item.dart';
@@ -401,10 +402,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             onPressed: () => _showFamilyInfoSheet(context),
           ),
           AppBarActionButton(
-            icon: Icons.logout,
-            tooltip: 'Sign Out',
+            icon: Icons.settings,
+            tooltip: 'Settings',
             onPressed: () {
-              Provider.of<AuthService>(context, listen: false).signOut();
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
             },
           ),
           const SizedBox(width: 8),

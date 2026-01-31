@@ -7,6 +7,7 @@ import 'screens/family_setup_screen.dart';
 import 'services/firestore_service.dart';
 import 'services/auth_service.dart';
 import 'models/user_model.dart';
+import 'widgets/biometric_wrapper.dart';
 
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
@@ -58,8 +59,8 @@ class _FamilyCheckWrapper extends StatelessWidget {
           return const FamilySetupScreen();
         }
         
-        // User has a family, show home
-        return const HomeScreen();
+        // User has a family, show home with biometric check
+        return const BiometricWrapper(child: HomeScreen());
       },
     );
   }
