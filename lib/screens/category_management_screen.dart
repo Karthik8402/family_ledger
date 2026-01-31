@@ -9,10 +9,12 @@ class CategoryManagementScreen extends StatefulWidget {
   const CategoryManagementScreen({super.key});
 
   @override
-  State<CategoryManagementScreen> createState() => _CategoryManagementScreenState();
+  State<CategoryManagementScreen> createState() =>
+      _CategoryManagementScreenState();
 }
 
-class _CategoryManagementScreenState extends State<CategoryManagementScreen> with SingleTickerProviderStateMixin {
+class _CategoryManagementScreenState extends State<CategoryManagementScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String? _familyId;
   bool _isLoading = true;
@@ -52,16 +54,17 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> wit
   Future<void> _loadFamilyId() async {
     final user = context.read<AuthService>().currentUser;
     if (user != null) {
-      final userProfile = await context.read<FirestoreService>().getUserProfile(user.id);
+      final userProfile =
+          await context.read<FirestoreService>().getUserProfile(user.uid);
       if (mounted) {
         setState(() {
           _familyId = userProfile?.familyId;
           _isLoading = false;
         });
-        
+
         // Seed defaults if empty
         if (_familyId != null) {
-           context.read<FirestoreService>().ensureDefaultCategories(_familyId!);
+          context.read<FirestoreService>().ensureDefaultCategories(_familyId!);
         }
       }
     }
@@ -80,7 +83,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> wit
           ],
         ),
       ),
-      body: _isLoading 
+      body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _familyId == null
               ? const Center(child: Text('No family found'))
@@ -102,12 +105,13 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> wit
     return StreamBuilder<List<CategoryModel>>(
       stream: context.read<FirestoreService>().streamCategories(_familyId!),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-        
+        if (!snapshot.hasData)
+          return const Center(child: CircularProgressIndicator());
+
         final categories = snapshot.data!.where((c) => c.type == type).toList();
-        
+
         if (categories.isEmpty) {
-           return const Center(child: Text('No categories found'));
+          return const Center(child: Text('No categories found'));
         }
 
         return ListView.builder(
@@ -116,8 +120,10 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> wit
             final cat = categories[index];
             return ListTile(
               leading: CircleAvatar(
-                backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                child: Icon(IconData(cat.iconCode, fontFamily: 'MaterialIcons'), color: Theme.of(context).primaryColor),
+                backgroundColor:
+                    Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                child: Icon(IconData(cat.iconCode, fontFamily: 'MaterialIcons'),
+                    color: Theme.of(context).primaryColor),
               ),
               title: Text(cat.name),
               trailing: Row(
@@ -147,17 +153,24 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> wit
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Category?'),
-        content: Text('Delete "${category.name}"? Transactions using this will keep the name.'),
+        content: Text(
+            'Delete "${category.name}"? Transactions using this will keep the name.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Delete', style: TextStyle(color: Colors.red))),
         ],
       ),
     );
 
     if (confirm == true && _familyId != null) {
       if (mounted) {
-         await context.read<FirestoreService>().deleteCategory(_familyId!, category.id);
+        await context
+            .read<FirestoreService>()
+            .deleteCategory(_familyId!, category.id);
       }
     }
   }
@@ -172,12 +185,13 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> wit
       ),
     );
   }
+
   Future<void> _showSetBudgetDialog(CategoryModel category) async {
     final controller = TextEditingController();
-    
+
     // Check for existing budget (optional, skipping for speed, will just overwrite)
     // To make it nicer, we could fetch it, but let's keep it snappy.
-    
+
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -185,7 +199,8 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> wit
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Set a monthly limit for this category. (Current Month)'),
+            const Text(
+                'Set a monthly limit for this category. (Current Month)'),
             const SizedBox(height: 16),
             TextField(
               controller: controller,
@@ -199,7 +214,8 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> wit
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           FilledButton(
             onPressed: () async {
               final amount = double.tryParse(controller.text.trim());
@@ -213,17 +229,21 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> wit
                   month: now.month,
                   year: now.year,
                 );
-                
-                await context.read<FirestoreService>().setBudget(_familyId!, budget);
+
+                await context
+                    .read<FirestoreService>()
+                    .setBudget(_familyId!, budget);
                 if (mounted) {
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Budget of ₹$amount set for ${category.name}')),
+                    SnackBar(
+                        content: Text(
+                            'Budget of ₹$amount set for ${category.name}')),
                   );
                 }
               }
             },
-           child: const Text('Save Budget'),
+            child: const Text('Save Budget'),
           ),
         ],
       ),
@@ -262,7 +282,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
 
   Future<void> _save() async {
     if (_nameController.text.trim().isEmpty) return;
-    
+
     setState(() => _isLoading = true);
     try {
       final newCat = CategoryModel(
@@ -271,8 +291,10 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
         iconCode: _selectedIcon,
         type: _type,
       );
-      
-      await context.read<FirestoreService>().addCategory(widget.familyId, newCat);
+
+      await context
+          .read<FirestoreService>()
+          .addCategory(widget.familyId, newCat);
       if (mounted) Navigator.pop(context);
     } catch (e) {
       // Handle error
@@ -318,8 +340,14 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: isSelected ? Theme.of(context).primaryColor.withValues(alpha: 0.2) : null,
-                        border: isSelected ? Border.all(color: Theme.of(context).primaryColor) : null,
+                        color: isSelected
+                            ? Theme.of(context)
+                                .primaryColor
+                                .withValues(alpha: 0.2)
+                            : null,
+                        border: isSelected
+                            ? Border.all(color: Theme.of(context).primaryColor)
+                            : null,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(IconData(code, fontFamily: 'MaterialIcons')),
@@ -332,10 +360,17 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel')),
         ElevatedButton(
           onPressed: _isLoading ? null : _save,
-          child: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Save'),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2))
+              : const Text('Save'),
         ),
       ],
     );

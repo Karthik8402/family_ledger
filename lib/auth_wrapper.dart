@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
@@ -15,22 +15,19 @@ class AuthWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context, listen: false);
-    return StreamBuilder<GoogleSignInAccount?>(
+    return StreamBuilder<User?>(
       stream: authService.authStateChanges,
-      initialData: authService.currentUser,
       builder: (context, authSnapshot) {
         if (authSnapshot.connectionState == ConnectionState.waiting) {
-          // debugPrint('Auth: Waiting for auth state...');
           return const Scaffold(
               backgroundColor: Colors.white,
               body:
                   Center(child: CircularProgressIndicator(color: Colors.teal)));
         }
 
-        // debugPrint('Auth: Snapshot hasData=${authSnapshot.hasData}');
-        if (authSnapshot.hasData) {
-          // User is logged in, check if they have a family
-          return _FamilyCheckWrapper(userId: authSnapshot.data!.id);
+        if (authSnapshot.hasData && authSnapshot.data != null) {
+          // User is logged in with Firebase Auth, check if they have a family
+          return _FamilyCheckWrapper(userId: authSnapshot.data!.uid);
         }
 
         return const LoginScreen();

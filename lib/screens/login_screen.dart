@@ -28,23 +28,23 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (user != null) {
         // 2. Check if user profile exists
-        final userProfile = await firestoreService.getUserProfile(user.id);
+        final userProfile = await firestoreService.getUserProfile(user.uid);
 
         if (userProfile == null) {
           // 3. Create new profile if first time
           await firestoreService.createUserProfile(
-            user.id,
+            user.uid,
             user.displayName ?? 'User',
-            user.email,
-            user.photoUrl,
+            user.email ?? '',
+            user.photoURL,
           );
         } else {
           // 4. If user exists, sync latest Google profile data (photo, name, etc.)
           await firestoreService.syncGoogleProfile(
-            user.id,
+            user.uid,
             user.displayName,
             user.email,
-            user.photoUrl,
+            user.photoURL,
           );
         }
 

@@ -2,43 +2,45 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper functions
+    // ========== HELPER FUNCTIONS ==========
     function isSignedIn() {
       return request.auth != null;
     }
     
+    // Get familyId from user document (returns null if doesn't exist)
     function getUserFamilyId() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.familyId;
+      let userDoc = /databases/$(database)/documents/users/$(request.auth.uid);
+      return exists(userDoc) ? get(userDoc).data.get('familyId', null) : null;
     }
-
+    
+    // Check if user is a member of a specific family
     function isFamilyMember(familyId) {
-      return isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.memberIds;
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/families/$(familyId)) &&
+             request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.memberIds;
     }
 
     // ========== USERS COLLECTION ==========
     match /users/{userId} {
-      // Allow user to read/write their own profile
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
-      
-      // Allow family members to see each other's basic profiles (name/photo)
-      allow read: if isSignedIn() && getUserFamilyId() == resource.data.familyId;
+      // Any signed-in user can read any user profile (for family member lookup)
+      allow read: if isSignedIn();
+      // Users can only write their own profile
+      allow write: if isSignedIn() && request.auth.uid == userId;
     }
 
     // ========== FAMILIES COLLECTION ==========
     match /families/{familyId} {
-      // Creation: Any logged in user
-      allow create: if isSignedIn();
+      // Any authenticated user can create a family or read families (needed for join-by-code)
+      allow create, read: if isSignedIn();
+      // Only members can update or delete
+      allow update, delete: if isFamilyMember(familyId);
       
-      // Read/Update: Only members of this family
-      allow read, update: if isFamilyMember(familyId);
-      
-      // Ownership sensitive fields (like removing members) should technically be 
-      // verified here, but we'll stick to basic member isolation for now.
-      
-      // Sub-collections (Categories & Budgets)
+      // Categories sub-collection - only family members
       match /categories/{catId} {
         allow read, write: if isFamilyMember(familyId);
       }
+      
+      // Budgets sub-collection - only family members
       match /budgets/{budId} {
         allow read, write: if isFamilyMember(familyId);
       }
@@ -46,26 +48,33 @@ service cloud.firestore {
 
     // ========== TRACKING TABS COLLECTION ==========
     match /tracking_tabs/{tabId} {
-      // Allow read/write if the user's familyId matches the tab's familyId
-      allow create: if isSignedIn() && request.resource.data.familyId == getUserFamilyId();
-      allow read, update, delete: if isSignedIn() && resource.data.familyId == getUserFamilyId();
+      // Create: signed in and familyId in data matches user's familyId
+      allow create: if isSignedIn() && 
+                       getUserFamilyId() != null &&
+                       request.resource.data.familyId == getUserFamilyId();
+      
+      // Read/Update/Delete: document's familyId matches user's familyId
+      allow read, update, delete: if isSignedIn() && 
+                                     resource.data.familyId == getUserFamilyId();
     }
 
     // ========== TRANSACTIONS COLLECTION ==========
     match /transactions/{txnId} {
-      // Create: user's familyId must match
-      allow create: if isSignedIn() && request.resource.data.familyId == getUserFamilyId();
+      // Create: signed in with matching familyId and userId
+      allow create: if isSignedIn() && 
+                       getUserFamilyId() != null &&
+                       request.resource.data.familyId == getUserFamilyId() &&
+                       request.resource.data.userId == request.auth.uid;
       
-      // Read: 
-      // 1. Shared visibility: any family member
-      // 2. Private visibility: only the owner
+      // Read: user can read if familyId matches OR they own the transaction
       allow read: if isSignedIn() && (
-        (resource.data.visibility == 'shared' && resource.data.familyId == getUserFamilyId()) ||
-        (resource.data.visibility == 'private' && resource.data.userId == request.auth.uid)
+        resource.data.familyId == getUserFamilyId() ||
+        resource.data.userId == request.auth.uid
       );
       
-      // Update/Delete: Only the transaction owner
-      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      // Update/Delete: only the transaction owner
+      allow update, delete: if isSignedIn() && 
+                               resource.data.userId == request.auth.uid;
     }
   }
 }

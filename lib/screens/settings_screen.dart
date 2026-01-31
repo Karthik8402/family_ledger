@@ -63,13 +63,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ListTile(
               leading: CircleAvatar(
                 backgroundImage:
-                    user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
-                child: user.photoUrl == null
+                    user.photoURL != null ? NetworkImage(user.photoURL!) : null,
+                child: user.photoURL == null
                     ? Text(user.displayName?[0] ?? 'U')
                     : null,
               ),
               title: Text(user.displayName ?? 'User'),
-              subtitle: Text(user.email),
+              subtitle: Text(user.email ?? ''),
             ),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),

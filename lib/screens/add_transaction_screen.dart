@@ -28,10 +28,10 @@ class AddTransactionScreen extends StatefulWidget {
 
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
-  late String _transactionType; 
+  late String _transactionType;
   String? _selectedCategory;
   bool _isPrivate = false;
   bool _isLoading = false;
@@ -40,7 +40,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // Edit mode: pre-fill form with existing transaction data
     if (widget.isEditMode) {
       final tx = widget.editTransaction!;
@@ -52,14 +52,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     } else {
       _transactionType = widget.initialType ?? TransactionModel.typeExpense;
     }
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadFamilyId());
   }
 
   Future<void> _loadFamilyId() async {
     final user = context.read<AuthService>().currentUser;
     if (user != null) {
-      final userProfile = await context.read<FirestoreService>().getUserProfile(user.id);
+      final userProfile =
+          await context.read<FirestoreService>().getUserProfile(user.uid);
       if (mounted) {
         setState(() => _familyId = userProfile?.familyId);
         if (_familyId != null) {
@@ -72,7 +73,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   // Category definitions with icons
   // Removed hardcoded categories
-
 
   @override
   void dispose() {
@@ -95,7 +95,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             ),
             behavior: SnackBarBehavior.floating,
             backgroundColor: Colors.orange.shade600,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
         return;
@@ -107,12 +108,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
       final authService = Provider.of<AuthService>(context, listen: false);
       final user = authService.currentUser;
-      final String uid = user?.id ?? 'test_user_id';
-      final String uName = user?.email ?? 'Test User'; 
+      final String uid = user?.uid ?? 'test_user_id';
+      final String uName = user?.email ?? 'Test User';
 
       try {
-        final firestoreService = Provider.of<FirestoreService>(context, listen: false);
-        
+        final firestoreService =
+            Provider.of<FirestoreService>(context, listen: false);
+
         if (widget.isEditMode) {
           // Update existing transaction
           final updatedTransaction = TransactionModel(
@@ -123,8 +125,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             userId: widget.editTransaction!.userId,
             userName: widget.editTransaction!.userName,
             type: _transactionType,
-            visibility: _isPrivate ? TransactionModel.visibilityPrivate : TransactionModel.visibilityShared,
-            familyId: widget.editTransaction!.familyId, // Keep original familyId
+            visibility: _isPrivate
+                ? TransactionModel.visibilityPrivate
+                : TransactionModel.visibilityShared,
+            familyId:
+                widget.editTransaction!.familyId, // Keep original familyId
             tabId: widget.initialTabId ?? widget.editTransaction!.tabId,
             note: _noteController.text.trim(),
           );
@@ -143,7 +148,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             userId: uid,
             userName: uName,
             type: _transactionType,
-            visibility: _isPrivate ? TransactionModel.visibilityPrivate : TransactionModel.visibilityShared,
+            visibility: _isPrivate
+                ? TransactionModel.visibilityPrivate
+                : TransactionModel.visibilityShared,
             tabId: widget.initialTabId,
             note: _noteController.text.trim(),
           );
@@ -200,19 +207,24 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     children: [
                       // Amount Display Card
                       Container(
-                        padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 28, horizontal: 24),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: isExpense
                                 ? [Colors.red.shade400, Colors.red.shade600]
-                                : [Colors.green.shade400, Colors.green.shade600],
+                                : [
+                                    Colors.green.shade400,
+                                    Colors.green.shade600
+                                  ],
                           ),
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: (isExpense ? Colors.red : Colors.green).withValues(alpha: 0.3),
+                              color: (isExpense ? Colors.red : Colors.green)
+                                  .withValues(alpha: 0.3),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),
@@ -232,7 +244,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             IntrinsicWidth(
                               child: TextFormField(
                                 controller: _amountController,
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                        decimal: true),
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
                                   fontSize: 44,
@@ -250,37 +264,55 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                   enabledBorder: InputBorder.none,
                                   focusedBorder: InputBorder.none,
                                   hintText: '0.00',
-                                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                                  hintStyle: TextStyle(
+                                      color:
+                                          Colors.white.withValues(alpha: 0.5)),
                                   filled: false,
                                 ),
                                 validator: (value) {
-                                  if (value == null || value.isEmpty) return 'Enter amount';
-                                  if (double.tryParse(value) == null) return 'Invalid number';
+                                  if (value == null || value.isEmpty)
+                                    return 'Enter amount';
+                                  if (double.tryParse(value) == null)
+                                    return 'Invalid number';
                                   return null;
                                 },
                               ),
                             ),
                           ],
                         ),
-                      ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
-                      
+                      )
+                          .animate()
+                          .scale(duration: 400.ms, curve: Curves.easeOutBack),
+
                       const SizedBox(height: 24),
 
                       // Type Selector
                       Container(
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.shade100,
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : Colors.grey.shade100,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         padding: const EdgeInsets.all(4),
                         child: Row(
                           children: [
-                            Expanded(child: _buildTypeButton('Expense', TransactionModel.typeExpense, Colors.red, isDark)),
-                            Expanded(child: _buildTypeButton('Income', TransactionModel.typeIncome, Colors.green, isDark)),
+                            Expanded(
+                                child: _buildTypeButton(
+                                    'Expense',
+                                    TransactionModel.typeExpense,
+                                    Colors.red,
+                                    isDark)),
+                            Expanded(
+                                child: _buildTypeButton(
+                                    'Income',
+                                    TransactionModel.typeIncome,
+                                    Colors.green,
+                                    isDark)),
                           ],
                         ),
                       ).animate().fadeIn(delay: 200.ms),
-                      
+
                       const SizedBox(height: 24),
 
                       // Category Dropdown
@@ -289,191 +321,274 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         children: [
                           Text(
                             'Category',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
                           TextButton.icon(
                             onPressed: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (_) => const CategoryManagementScreen()),
+                                MaterialPageRoute(
+                                    builder: (_) =>
+                                        const CategoryManagementScreen()),
                               );
                             },
                             icon: const Icon(Icons.edit, size: 16),
                             label: const Text('Manage'),
                             style: TextButton.styleFrom(
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 12),
-                      
-                      _familyId == null 
-                          ? const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()))
+
+                      _familyId == null
+                          ? const Center(
+                              child: Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: CircularProgressIndicator()))
                           : StreamBuilder<List<CategoryModel>>(
-                              stream: context.read<FirestoreService>().streamCategories(_familyId!),
-                              builder: (context, snapshot) {
-                                if (!snapshot.hasData) {
-                                  return const Center(child: Padding(padding: EdgeInsets.all(16.0), child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))));
-                                }
-
-                                final allCategories = snapshot.data!;
-                                // Deduplicate categories by name to prevent Dropdown error if duplicates exist
-                                final uniqueCategories = <String>{};
-                                final currentCategories = allCategories
-                                    .where((c) => c.type == _transactionType && uniqueCategories.add(c.name))
-                                    .toList();
-
-                                if (currentCategories.isEmpty) {
-                                  return Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.orange.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
-                                    ),
-                                    child: const Text('No categories found. Click Manage to add some!'),
-                                  );
-                                }
-
-                                // Reset selection if not in list
-                                if (_selectedCategory != null && !currentCategories.any((c) => c.name == _selectedCategory)) {
-                                  // Don't auto-reset immediately to avoid flicker, or do?
-                                  // For now, let's keep it, but it might be invalid.
-                                  // Actually, better to reset it safely after build?
-                                  // We'll let the user pick again.
-                                }
-
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: _selectedCategory != null 
-                                          ? primaryColor.withValues(alpha: 0.5)
-                                          : Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                                    ),
-                                    boxShadow: isDark ? null : [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.04),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: DropdownButtonHideUnderline(
-                                    child: DropdownButton<String>(
-                                      value: currentCategories.any((c) => c.name == _selectedCategory) ? _selectedCategory : null,
-                                      hint: Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.category, color: Colors.grey.shade500),
-                                            const SizedBox(width: 12),
-                                            Text(
-                                              'Select Category',
-                                              style: TextStyle(color: Colors.grey.shade500),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      isExpanded: true,
-                                      icon: Padding(
-                                        padding: const EdgeInsets.only(right: 16),
-                                        child: Icon(Icons.keyboard_arrow_down, color: primaryColor),
-                                      ),
-                                      dropdownColor: isDark ? const Color(0xFF2D2D44) : Colors.white,
-                                      borderRadius: BorderRadius.circular(16),
-                                      padding: const EdgeInsets.symmetric(vertical: 8),
-                                      items: currentCategories.map((category) {
-                                        return DropdownMenuItem<String>(
-                                          value: category.name,
+                                  stream: context
+                                      .read<FirestoreService>()
+                                      .streamCategories(_familyId!),
+                                  builder: (context, snapshot) {
+                                    if (!snapshot.hasData) {
+                                      return const Center(
                                           child: Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                                              padding: EdgeInsets.all(16.0),
+                                              child: SizedBox(
+                                                  width: 24,
+                                                  height: 24,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                          strokeWidth: 2))));
+                                    }
+
+                                    final allCategories = snapshot.data!;
+                                    // Deduplicate categories by name to prevent Dropdown error if duplicates exist
+                                    final uniqueCategories = <String>{};
+                                    final currentCategories = allCategories
+                                        .where((c) =>
+                                            c.type == _transactionType &&
+                                            uniqueCategories.add(c.name))
+                                        .toList();
+
+                                    if (currentCategories.isEmpty) {
+                                      return Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: Colors.orange
+                                              .withValues(alpha: 0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          border: Border.all(
+                                              color: Colors.orange
+                                                  .withValues(alpha: 0.3)),
+                                        ),
+                                        child: const Text(
+                                            'No categories found. Click Manage to add some!'),
+                                      );
+                                    }
+
+                                    // Reset selection if not in list
+                                    if (_selectedCategory != null &&
+                                        !currentCategories.any((c) =>
+                                            c.name == _selectedCategory)) {
+                                      // Don't auto-reset immediately to avoid flicker, or do?
+                                      // For now, let's keep it, but it might be invalid.
+                                      // Actually, better to reset it safely after build?
+                                      // We'll let the user pick again.
+                                    }
+
+                                    return Container(
+                                      decoration: BoxDecoration(
+                                        color: isDark
+                                            ? Colors.white
+                                                .withValues(alpha: 0.05)
+                                            : Colors.white,
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: _selectedCategory != null
+                                              ? primaryColor.withValues(
+                                                  alpha: 0.5)
+                                              : Theme.of(context)
+                                                  .dividerColor
+                                                  .withValues(alpha: 0.3),
+                                        ),
+                                        boxShadow: isDark
+                                            ? null
+                                            : [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withValues(alpha: 0.04),
+                                                  blurRadius: 10,
+                                                  offset: const Offset(0, 4),
+                                                ),
+                                              ],
+                                      ),
+                                      child: DropdownButtonHideUnderline(
+                                        child: DropdownButton<String>(
+                                          value: currentCategories.any((c) =>
+                                                  c.name == _selectedCategory)
+                                              ? _selectedCategory
+                                              : null,
+                                          hint: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 16),
                                             child: Row(
                                               children: [
-                                                Container(
-                                                  padding: const EdgeInsets.all(8),
-                                                  decoration: BoxDecoration(
-                                                    color: primaryColor.withValues(alpha: 0.1),
-                                                    borderRadius: BorderRadius.circular(8),
-                                                  ),
-                                                  child: Icon(
-                                                    IconData(category.iconCode, fontFamily: 'MaterialIcons'),
-                                                    color: primaryColor,
-                                                    size: 20,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 14),
+                                                Icon(Icons.category,
+                                                    color:
+                                                        Colors.grey.shade500),
+                                                const SizedBox(width: 12),
                                                 Text(
-                                                  category.name,
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.w500,
-                                                    fontSize: 16,
-                                                  ),
+                                                  'Select Category',
+                                                  style: TextStyle(
+                                                      color:
+                                                          Colors.grey.shade500),
                                                 ),
                                               ],
                                             ),
                                           ),
-                                        );
-                                      }).toList(),
-                                      onChanged: (value) {
-                                        setState(() => _selectedCategory = value);
-                                      },
-                                      selectedItemBuilder: (context) {
-                                        return currentCategories.map((category) {
-                                          return Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                                            child: Row(
-                                              children: [
-                                                Container(
-                                                  padding: const EdgeInsets.all(8),
-                                                  decoration: BoxDecoration(
-                                                    color: primaryColor.withValues(alpha: 0.1),
-                                                    borderRadius: BorderRadius.circular(8),
-                                                  ),
-                                                  child: Icon(
-                                                    IconData(category.iconCode, fontFamily: 'MaterialIcons'),
-                                                    color: primaryColor,
-                                                    size: 20,
-                                                  ),
+                                          isExpanded: true,
+                                          icon: Padding(
+                                            padding: const EdgeInsets.only(
+                                                right: 16),
+                                            child: Icon(
+                                                Icons.keyboard_arrow_down,
+                                                color: primaryColor),
+                                          ),
+                                          dropdownColor: isDark
+                                              ? const Color(0xFF2D2D44)
+                                              : Colors.white,
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 8),
+                                          items:
+                                              currentCategories.map((category) {
+                                            return DropdownMenuItem<String>(
+                                              value: category.name,
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 16),
+                                                child: Row(
+                                                  children: [
+                                                    Container(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              8),
+                                                      decoration: BoxDecoration(
+                                                        color: primaryColor
+                                                            .withValues(
+                                                                alpha: 0.1),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(8),
+                                                      ),
+                                                      child: Icon(
+                                                        IconData(
+                                                            category.iconCode,
+                                                            fontFamily:
+                                                                'MaterialIcons'),
+                                                        color: primaryColor,
+                                                        size: 20,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 14),
+                                                    Text(
+                                                      category.name,
+                                                      style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        fontSize: 16,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
-                                                const SizedBox(width: 14),
-                                                Text(
-                                                  category.name,
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.w600,
-                                                    fontSize: 16,
-                                                    color: primaryColor,
-                                                  ),
+                                              ),
+                                            );
+                                          }).toList(),
+                                          onChanged: (value) {
+                                            setState(() =>
+                                                _selectedCategory = value);
+                                          },
+                                          selectedItemBuilder: (context) {
+                                            return currentCategories
+                                                .map((category) {
+                                              return Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 16),
+                                                child: Row(
+                                                  children: [
+                                                    Container(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              8),
+                                                      decoration: BoxDecoration(
+                                                        color: primaryColor
+                                                            .withValues(
+                                                                alpha: 0.1),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(8),
+                                                      ),
+                                                      child: Icon(
+                                                        IconData(
+                                                            category.iconCode,
+                                                            fontFamily:
+                                                                'MaterialIcons'),
+                                                        color: primaryColor,
+                                                        size: 20,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 14),
+                                                    Text(
+                                                      category.name,
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        fontSize: 16,
+                                                        color: primaryColor,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
-                                              ],
-                                            ),
-                                          );
-                                        }).toList();
-                                      },
-                                    ),
-                                  ),
-                                );
-                              }
-                            ).animate().slideX(begin: 0.1, end: 0, delay: 300.ms).fadeIn(),
-                      
+                                              );
+                                            }).toList();
+                                          },
+                                        ),
+                                      ),
+                                    );
+                                  })
+                              .animate()
+                              .slideX(begin: 0.1, end: 0, delay: 300.ms)
+                              .fadeIn(),
+
                       const SizedBox(height: 24),
 
                       // Note Input (Optional)
                       Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
-                          boxShadow: isDark ? null : [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.04),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                          boxShadow: isDark
+                              ? null
+                              : [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.04),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
                         ),
                         child: TextFormField(
                           controller: _noteController,
@@ -487,45 +602,59 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 color: primaryColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Icon(Icons.edit_note, color: primaryColor, size: 20),
+                              child: Icon(Icons.edit_note,
+                                  color: primaryColor, size: 20),
                             ),
                             filled: true,
-                            fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+                            fillColor: isDark
+                                ? Colors.white.withValues(alpha: 0.05)
+                                : Colors.white,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
                               borderSide: BorderSide.none,
                             ),
                           ),
                         ),
-                      ).animate().slideX(begin: 0.1, end: 0, delay: 400.ms).fadeIn(),
-                      
+                      )
+                          .animate()
+                          .slideX(begin: 0.1, end: 0, delay: 400.ms)
+                          .fadeIn(),
+
                       const SizedBox(height: 20),
 
                       // Privacy Toggle
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.05)
+                              : Colors.white,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: _isPrivate 
-                                ? Colors.orange.withValues(alpha: 0.5) 
-                                : Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                            color: _isPrivate
+                                ? Colors.orange.withValues(alpha: 0.5)
+                                : Theme.of(context)
+                                    .dividerColor
+                                    .withValues(alpha: 0.3),
                           ),
-                          boxShadow: isDark ? null : [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.04),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                          boxShadow: isDark
+                              ? null
+                              : [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.04),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
                         ),
                         child: Row(
                           children: [
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: _isPrivate ? Colors.orange.withValues(alpha: 0.15) : Colors.blue.withValues(alpha: 0.15),
+                                color: _isPrivate
+                                    ? Colors.orange.withValues(alpha: 0.15)
+                                    : Colors.blue.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
@@ -538,23 +667,38 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Private Transaction', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                                  const Text('Private Transaction',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 15)),
                                   const SizedBox(height: 2),
                                   Text(
-                                    _isPrivate ? 'Visible only to you' : 'Shared with family',
-                                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 12),
+                                    _isPrivate
+                                        ? 'Visible only to you'
+                                        : 'Shared with family',
+                                    style: TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.6),
+                                        fontSize: 12),
                                   ),
                                 ],
                               ),
                             ),
                             Switch(
                               value: _isPrivate,
-                              onChanged: (val) => setState(() => _isPrivate = val),
-                              thumbColor: WidgetStateProperty.all(Colors.orange),
+                              onChanged: (val) =>
+                                  setState(() => _isPrivate = val),
+                              thumbColor:
+                                  WidgetStateProperty.all(Colors.orange),
                             ),
                           ],
                         ),
-                      ).animate().slideX(begin: 0.1, end: 0, delay: 500.ms).fadeIn(),
+                      )
+                          .animate()
+                          .slideX(begin: 0.1, end: 0, delay: 500.ms)
+                          .fadeIn(),
                     ],
                   ),
                 ),
@@ -580,11 +724,21 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     onPressed: _isLoading ? null : _submitTransaction,
                     style: FilledButton.styleFrom(
                       backgroundColor: primaryColor,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
                     ),
-                    child: _isLoading 
-                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                      : Text(widget.isEditMode ? 'Update Transaction' : 'Save Transaction', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2.5))
+                        : Text(
+                            widget.isEditMode
+                                ? 'Update Transaction'
+                                : 'Save Transaction',
+                            style: const TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ).animate().slideY(begin: 0.5, end: 0, duration: 400.ms),
@@ -595,7 +749,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  Widget _buildTypeButton(String label, String value, Color color, bool isDark) {
+  Widget _buildTypeButton(
+      String label, String value, Color color, bool isDark) {
     final isSelected = _transactionType == value;
     return GestureDetector(
       onTap: () => setState(() {
@@ -606,19 +761,26 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected 
+          color: isSelected
               ? (isDark ? color.withValues(alpha: 0.2) : Colors.white)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: isSelected && !isDark 
-              ? [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 6, offset: const Offset(0, 2))] 
+          boxShadow: isSelected && !isDark
+              ? [
+                  BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2))
+                ]
               : null,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              value == TransactionModel.typeExpense ? Icons.arrow_upward : Icons.arrow_downward,
+              value == TransactionModel.typeExpense
+                  ? Icons.arrow_upward
+                  : Icons.arrow_downward,
               size: 18,
               color: isSelected ? color : Colors.grey,
             ),

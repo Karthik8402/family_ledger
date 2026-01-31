@@ -60,10 +60,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     if (user != null) {
       await firestoreService.syncGoogleProfile(
-          user.id, user.displayName, user.email, user.photoUrl);
+          user.uid, user.displayName, user.email, user.photoURL);
 
       // Load family members for filter
-      final userProfile = await firestoreService.getUserProfile(user.id);
+      final userProfile = await firestoreService.getUserProfile(user.uid);
       if (userProfile?.familyId != null && mounted) {
         final members =
             await firestoreService.getFamilyMembers(userProfile!.familyId!);
@@ -198,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final firestoreService = Provider.of<FirestoreService>(context);
     final authService = Provider.of<AuthService>(context, listen: false);
     final user = authService.currentUser;
-    final String currentUserId = user?.id ?? 'test_user_id';
+    final String currentUserId = user?.uid ?? 'test_user_id';
 
     return StreamBuilder<List<TrackingTab>>(
       stream: firestoreService.streamTrackingTabs(),
@@ -909,7 +909,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     showFamilyInfoSheet(
       context: context,
       firestoreService: firestoreService,
-      userId: user.id,
+      userId: user.uid,
     );
   }
 }

@@ -77,7 +77,7 @@ class FirestoreService {
       'familyId': familyId,
       'email': user?.email ?? '',
       'name': user?.displayName ?? 'User',
-      'photoUrl': user?.photoUrl,
+      'photoUrl': user?.photoURL,
       'createdAt': Timestamp.now(),
     }, SetOptions(merge: true));
   }
@@ -223,7 +223,7 @@ class FirestoreService {
     final user = _authService.currentUser;
     if (user == null) throw Exception('Not authenticated');
 
-    final userProfile = await getUserProfile(user.id);
+    final userProfile = await getUserProfile(user.uid);
     if (userProfile?.familyId == null) throw Exception('Join a family first');
 
     await _trackingTabs.add({
@@ -250,7 +250,7 @@ class FirestoreService {
       return;
     }
 
-    final userDoc = await _users.doc(user.id).get();
+    final userDoc = await _users.doc(user.uid).get();
     if (!userDoc.exists) {
       yield [];
       return;
@@ -283,7 +283,7 @@ class FirestoreService {
     final user = _authService.currentUser;
     if (user == null) throw Exception('Not authenticated');
 
-    final userProfile = await getUserProfile(user.id);
+    final userProfile = await getUserProfile(user.uid);
     if (userProfile?.familyId == null) throw Exception('Join a family first');
 
     final data = transaction.toMap();
@@ -320,7 +320,7 @@ class FirestoreService {
 
     // Simplified approach: Fetch familyId once, then stream transactions.
     // We use await to get the initial family ID to avoid asyncExpand blocking issues.
-    final userDoc = await _users.doc(user.id).get();
+    final userDoc = await _users.doc(user.uid).get();
 
     if (!userDoc.exists) {
       yield [];
@@ -345,7 +345,7 @@ class FirestoreService {
           .where((txn) {
         // Privacy logic: shared = all family sees, private = only owner sees
         bool isShared = txn.visibility == 'shared';
-        bool isMyPrivate = txn.visibility == 'private' && txn.userId == user.id;
+        bool isMyPrivate = txn.visibility == 'private' && txn.userId == user.uid;
         return isShared || isMyPrivate;
       }).toList();
 
@@ -525,7 +525,7 @@ class FirestoreService {
       return;
     }
 
-    final userDoc = await _users.doc(user.id).get();
+    final userDoc = await _users.doc(user.uid).get();
     if (!userDoc.exists) {
       yield [];
       return;

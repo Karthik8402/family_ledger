@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AuthService {
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     clientId: kIsWeb ? dotenv.env['GOOGLE_CLIENT_ID'] : null,
     scopes: [
@@ -12,50 +14,85 @@ class AuthService {
     ],
   );
 
-  final _authStreamController = StreamController<GoogleSignInAccount?>.broadcast();
+  // Stream of Firebase Auth state changes - this is what Firestore uses for request.auth
+  Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
+
+  // Current Firebase user
+  User? get currentUser => _firebaseAuth.currentUser;
 
   AuthService() {
-    _googleSignIn.onCurrentUserChanged.listen((account) {
-      _authStreamController.add(account);
-    });
     _init();
   }
 
   Future<void> _init() async {
     try {
-      // Try to restore previous session silently
-      // Increased timeout for better reliability
-      await _googleSignIn.signInSilently().timeout(
+      // Try to restore previous Google session silently
+      final googleUser = await _googleSignIn.signInSilently().timeout(
         const Duration(seconds: 5),
         onTimeout: () {
           debugPrint('Silent sign-in timed out');
           return null;
         },
       );
+
+      // If we have a Google user but no Firebase user, sign in to Firebase
+      if (googleUser != null && _firebaseAuth.currentUser == null) {
+        await _signInToFirebase(googleUser);
+      }
     } catch (e) {
       debugPrint('Silent sign-in failed: $e');
-    } finally {
-      // Ensure we emit null if no user, so StreamBuilder can show login
-      if (_googleSignIn.currentUser == null) {
-        _authStreamController.add(null);
-      }
     }
   }
 
-  Stream<GoogleSignInAccount?> get authStateChanges => _authStreamController.stream;
-
-  GoogleSignInAccount? get currentUser => _googleSignIn.currentUser;
-
-  Future<GoogleSignInAccount?> signInWithGoogle() async {
+  Future<User?> signInWithGoogle() async {
     try {
+      // 1. Sign in with Google
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      return googleUser;
+      if (googleUser == null) {
+        return null; // User cancelled
+      }
+
+      // 2. Get auth details from Google
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      // 3. Create Firebase credential
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // 4. Sign in to Firebase with Google credential - THIS populates request.auth!
+      final UserCredential userCredential =
+          await _firebaseAuth.signInWithCredential(credential);
+
+      return userCredential.user;
     } catch (e) {
       throw 'Failed to sign in with Google: $e';
     }
   }
 
+  Future<User?> _signInToFirebase(GoogleSignInAccount googleUser) async {
+    try {
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+      final UserCredential userCredential =
+          await _firebaseAuth.signInWithCredential(credential);
+      return userCredential.user;
+    } catch (e) {
+      debugPrint('Failed to sign in to Firebase: $e');
+      return null;
+    }
+  }
+
   Future<void> signOut() async {
-    await _googleSignIn.signOut();
+    await Future.wait([
+      _googleSignIn.signOut(),
+      _firebaseAuth.signOut(),
+    ]);
   }
 }

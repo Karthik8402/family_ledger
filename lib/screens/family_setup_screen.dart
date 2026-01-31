@@ -39,7 +39,7 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
       if (user == null) throw Exception('Not logged in');
 
       final family = await Provider.of<FirestoreService>(context, listen: false)
-          .createFamily(_familyNameController.text.trim(), user.id);
+          .createFamily(_familyNameController.text.trim(), user.uid);
 
       if (mounted) {
         _showSuccess('Family created! Share code: ${family.code}');
@@ -65,7 +65,7 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
       if (user == null) throw Exception('Not logged in');
 
       await Provider.of<FirestoreService>(context, listen: false)
-          .joinFamilyByCode(code, user.id);
+          .joinFamilyByCode(code, user.uid);
 
       if (mounted) {
         _showSuccess('Successfully joined family!');
