@@ -16,6 +16,8 @@ import '../widgets/home/transaction_item.dart';
 import '../widgets/home/stat_card.dart';
 import '../widgets/home/date_selector.dart';
 import '../utils/toast_utils.dart';
+import '../models/filter_model.dart';
+import '../widgets/filter_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -39,6 +41,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<TrackingTab> _tabs = [];
   bool _isLoadingTabs = true;
 
+  // Advanced Filter State
+  FilterModel _advancedFilter = FilterModel.empty;
+  List<UserModel> _familyMembers = [];
+  List<TransactionModel> _allTransactions = [];
+
   @override
   void initState() {
     super.initState();
@@ -58,7 +65,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         user.email, 
         user.photoUrl
       );
+      
+      // Load family members for filter
+      final userProfile = await firestoreService.getUserProfile(user.id);
+      if (userProfile?.familyId != null && mounted) {
+        final members = await firestoreService.getFamilyMembers(userProfile!.familyId!);
+        setState(() => _familyMembers = members);
+      }
     }
+  }
+
+  void _showFilterSheet(List<TransactionModel> transactions) {
+    // Get unique categories from transactions
+    final categories = transactions
+        .map((t) => t.category)
+        .toSet()
+        .toList()
+      ..sort();
+
+    FilterSheet.show(
+      context: context,
+      currentFilter: _advancedFilter,
+      availableCategories: categories,
+      familyMembers: _familyMembers,
+      onApply: (filter) {
+        setState(() => _advancedFilter = filter);
+      },
+    );
   }
 
   @override
@@ -69,15 +102,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _updateTabController(int newLength) {
-    if (_tabController == null || _tabController!.length != newLength) {
+    // Add 1 for the "+" add tab
+    final actualLength = newLength + 1;
+    if (_tabController == null || _tabController!.length != actualLength) {
       final oldIndex = _tabController?.index ?? 0;
       _tabController?.dispose();
       _tabController = TabController(
-        length: newLength, 
+        length: actualLength, 
         vsync: this,
-        initialIndex: oldIndex < newLength ? oldIndex : 0,
+        initialIndex: oldIndex < newLength ? oldIndex : 0, // Don't start on + tab
       );
       _tabController!.addListener(() {
+        // If user taps the "+" tab, show dialog and go back
+        if (_tabController!.index == actualLength - 1) {
+          // Go back to previous tab first
+          _tabController!.animateTo(oldIndex < newLength ? oldIndex : 0);
+          _showAddTabDialog();
+        }
         if (!_tabController!.indexIsChanging) setState(() {});
       });
     }
@@ -161,6 +202,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               // }
               
               final allTransactions = txnSnapshot.data ?? [];
+              // Store for filter sheet access
+              if (allTransactions.isNotEmpty && _allTransactions.isEmpty) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) setState(() => _allTransactions = allTransactions);
+                });
+              } else if (allTransactions.length != _allTransactions.length) {
+                _allTransactions = allTransactions;
+              }
               final filteredTransactions = _filterTransactions(allTransactions);
 
               return TabBarView(
@@ -197,6 +246,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     currentUserId,
                     tab,
                   )),
+
+                  // Placeholder for + tab (user never sees this as tapping + opens dialog)
+                  const SizedBox.shrink(),
                 ],
               );
             },
@@ -256,23 +308,49 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         unselectedLabelColor: Colors.grey,
         isScrollable: true, // Allow scrolling if many tabs
         tabs: [
-          const Tab(text: 'Expenses', icon: Icon(Icons.credit_card)), // Distinct icon for Expenses
-          const Tab(text: 'Income', icon: Icon(Icons.savings)), // Distinct icon for Income
+          const Tab(text: 'Expenses', icon: Icon(Icons.credit_card)),
+          const Tab(text: 'Income', icon: Icon(Icons.savings)),
           ...customTabs.map((tab) => Tab(
             text: tab.name,
             icon: const Icon(Icons.label_important_outline),
           )),
-          // Hidden tab for add button visually? No, add button in actions.
+          // Add Tab button as last tab
+          const Tab(icon: Icon(Icons.add_circle_outline), text: 'New'),
         ],
       ),
       actions: [
-        if (!_isSearching) ...[
-           IconButton(
-             icon: const Icon(Icons.playlist_add),
-             tooltip: 'Add Tracking Tab',
-             onPressed: _showAddTabDialog,
+
+        // Filter button - only visible in search mode
+        if (_isSearching) ...[
+           Stack(
+             children: [
+               IconButton(
+                 icon: const Icon(Icons.filter_list),
+                 tooltip: 'Filters',
+                 onPressed: () => _showFilterSheet(_allTransactions),
+               ),
+               if (_advancedFilter.hasActiveFilters)
+                 Positioned(
+                   right: 4,
+                   top: 4,
+                   child: Container(
+                     padding: const EdgeInsets.all(4),
+                     decoration: BoxDecoration(
+                       color: Theme.of(context).colorScheme.primary,
+                       shape: BoxShape.circle,
+                     ),
+                     child: Text(
+                       '${_advancedFilter.activeFilterCount}',
+                       style: const TextStyle(
+                         color: Colors.white,
+                         fontSize: 10,
+                         fontWeight: FontWeight.bold,
+                       ),
+                     ),
+                   ),
+                 ),
+             ],
            ),
-           // ... other actions ...
         ],
         // Existing Actions
         Padding(
@@ -286,6 +364,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   _isSearching = false;
                   _searchQuery = '';
                   _searchController.clear();
+                  _advancedFilter = FilterModel.empty; // Clear filters when exiting search
                 } else {
                   _isSearching = true;
                 }
@@ -665,16 +744,48 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   List<TransactionModel> _filterTransactions(List<TransactionModel> all) {
      return all.where((t) {
+        // Basic date filter (month/year selector)
         final matchesDate = t.date.month == _selectedMonth && t.date.year == _selectedYear;
         
-        // Improved Search Logic
+        // Search Logic
         final query = _searchQuery.toLowerCase().trim();
         final matchesSearch = _searchQuery.isEmpty || 
                               t.category.toLowerCase().contains(query) || 
                               t.amount.toString().contains(query) ||
                               t.userName.toLowerCase().contains(query);
-                              
-        return matchesDate && matchesSearch;
+        
+        // Advanced Filters
+        bool matchesAdvanced = true;
+        
+        // Date range filter (overrides month/year if set)
+        if (_advancedFilter.startDate != null && _advancedFilter.endDate != null) {
+          final afterStart = !t.date.isBefore(_advancedFilter.startDate!);
+          final beforeEnd = !t.date.isAfter(_advancedFilter.endDate!.add(const Duration(days: 1)));
+          matchesAdvanced = matchesAdvanced && afterStart && beforeEnd;
+        }
+        
+        // Category filter
+        if (_advancedFilter.categories.isNotEmpty) {
+          matchesAdvanced = matchesAdvanced && _advancedFilter.categories.contains(t.category);
+        }
+        
+        // Amount range filter
+        if (_advancedFilter.minAmount != null) {
+          matchesAdvanced = matchesAdvanced && t.amount >= _advancedFilter.minAmount!;
+        }
+        if (_advancedFilter.maxAmount != null) {
+          matchesAdvanced = matchesAdvanced && t.amount <= _advancedFilter.maxAmount!;
+        }
+        
+        // Member filter
+        if (_advancedFilter.memberIds.isNotEmpty) {
+          matchesAdvanced = matchesAdvanced && _advancedFilter.memberIds.contains(t.userId);
+        }
+        
+        // If advanced date filter is set, ignore basic month/year filter
+        final useBasicDateFilter = _advancedFilter.startDate == null && _advancedFilter.endDate == null;
+        
+        return (useBasicDateFilter ? matchesDate : true) && matchesSearch && matchesAdvanced;
      }).toList()
        ..sort((a, b) => b.date.compareTo(a.date)); // Sort by date descending
   }
