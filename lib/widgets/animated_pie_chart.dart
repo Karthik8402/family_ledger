@@ -1,6 +1,5 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 
 class AnimatedPieChart extends StatefulWidget {
   final Map<String, double> data;
@@ -47,7 +46,7 @@ class _AnimatedPieChartState extends State<AnimatedPieChart> {
 
     final sortedEntries = widget.data.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    
+
     final total = widget.data.values.fold(0.0, (sum, val) => sum + val);
 
     return AspectRatio(
@@ -63,7 +62,8 @@ class _AnimatedPieChartState extends State<AnimatedPieChart> {
                   touchedIndex = -1;
                   return;
                 }
-                touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+                touchedIndex =
+                    pieTouchResponse.touchedSection!.touchedSectionIndex;
               });
             },
           ),
@@ -76,9 +76,11 @@ class _AnimatedPieChartState extends State<AnimatedPieChart> {
             final radius = isTouched ? 110.0 : 100.0;
             final percent = (entry.value.value / total) * 100;
             final color = chartColors[entry.key % chartColors.length];
-            
+
             // Animation: value is 0 until _isPlaying is true
-            final value = _isPlaying ? entry.value.value : 0.001; // Avoid 0 crash in some versions
+            final value = _isPlaying
+                ? entry.value.value
+                : 0.001; // Avoid 0 crash in some versions
 
             return PieChartSectionData(
               color: color,
@@ -96,8 +98,8 @@ class _AnimatedPieChartState extends State<AnimatedPieChart> {
             );
           }).toList(),
         ),
-        swapAnimationDuration: const Duration(milliseconds: 800), // Smooth grow
-        swapAnimationCurve: Curves.easeOutCirc,
+        duration: const Duration(milliseconds: 800), // Smooth grow
+        curve: Curves.easeOutCirc,
       ),
     );
   }
@@ -105,13 +107,26 @@ class _AnimatedPieChartState extends State<AnimatedPieChart> {
   Widget _buildIconBadge(String category) {
     IconData icon;
     switch (category.toLowerCase()) {
-      case 'grocery': icon = Icons.shopping_cart; break;
-      case 'food': icon = Icons.restaurant; break;
-      case 'transport': icon = Icons.directions_car; break;
-      case 'bills': icon = Icons.receipt; break;
-      case 'entertainment': icon = Icons.movie; break;
-      case 'shopping': icon = Icons.shopping_bag; break;
-      default: icon = Icons.category;
+      case 'grocery':
+        icon = Icons.shopping_cart;
+        break;
+      case 'food':
+        icon = Icons.restaurant;
+        break;
+      case 'transport':
+        icon = Icons.directions_car;
+        break;
+      case 'bills':
+        icon = Icons.receipt;
+        break;
+      case 'entertainment':
+        icon = Icons.movie;
+        break;
+      case 'shopping':
+        icon = Icons.shopping_bag;
+        break;
+      default:
+        icon = Icons.category;
     }
     return Container(
       padding: const EdgeInsets.all(4),

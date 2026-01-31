@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+
 import 'auth_service.dart';
 import '../models/transaction_model.dart';
 import '../models/user_model.dart';
@@ -29,7 +29,8 @@ class FirestoreService {
   // ========== USER METHODS ==========
 
   // Create user profile
-  Future<void> createUserProfile(String userId, String name, String email, String? photoUrl) async {
+  Future<void> createUserProfile(
+      String userId, String name, String email, String? photoUrl) async {
     await _users.doc(userId).set({
       'name': name,
       'email': email,
@@ -59,7 +60,8 @@ class FirestoreService {
   }
 
   // Sync Google Profile (updates name, email, photoUrl on login)
-  Future<void> syncGoogleProfile(String userId, String? name, String? email, String? photoUrl) async {
+  Future<void> syncGoogleProfile(
+      String userId, String? name, String? email, String? photoUrl) async {
     await _users.doc(userId).set({
       'name': name ?? 'User',
       'email': email ?? '',
@@ -102,8 +104,11 @@ class FirestoreService {
 
   // Join family by code
   Future<FamilyModel?> joinFamilyByCode(String code, String userId) async {
-    final query = await _families.where('code', isEqualTo: code.toUpperCase()).limit(1).get();
-    
+    final query = await _families
+        .where('code', isEqualTo: code.toUpperCase())
+        .limit(1)
+        .get();
+
     if (query.docs.isEmpty) {
       throw Exception('Family not found. Check the code.');
     }
@@ -161,10 +166,12 @@ class FirestoreService {
   }
 
   // Remove member from family (owner only)
-  Future<void> removeFamilyMember(String familyId, String memberId, String requesterId) async {
+  Future<void> removeFamilyMember(
+      String familyId, String memberId, String requesterId) async {
     final family = await getFamily(familyId);
     if (family == null) throw Exception('Family not found');
-    if (family.ownerId != requesterId) throw Exception('Only owner can remove members');
+    if (family.ownerId != requesterId)
+      throw Exception('Only owner can remove members');
     if (memberId == family.ownerId) throw Exception('Owner cannot be removed');
 
     await _families.doc(familyId).update({
@@ -175,12 +182,15 @@ class FirestoreService {
   }
 
   // Transfer ownership (owner only)
-  Future<void> transferOwnership(String familyId, String newOwnerId, String requesterId) async {
+  Future<void> transferOwnership(
+      String familyId, String newOwnerId, String requesterId) async {
     final family = await getFamily(familyId);
     if (family == null) throw Exception('Family not found');
-    if (family.ownerId != requesterId) throw Exception('Only owner can transfer ownership');
-    if (!family.memberIds.contains(newOwnerId)) throw Exception('New owner must be a family member');
-    
+    if (family.ownerId != requesterId)
+      throw Exception('Only owner can transfer ownership');
+    if (!family.memberIds.contains(newOwnerId))
+      throw Exception('New owner must be a family member');
+
     await _families.doc(familyId).update({
       'ownerId': newOwnerId,
     });
@@ -195,7 +205,8 @@ class FirestoreService {
     if (family == null) return;
 
     if (family.ownerId == userId) {
-      throw Exception('Owner cannot leave. Transfer ownership or delete family.');
+      throw Exception(
+          'Owner cannot leave. Transfer ownership or delete family.');
     }
 
     await _families.doc(family.id).update({
@@ -224,11 +235,11 @@ class FirestoreService {
 
   // Delete tracking tab
   Future<void> deleteTrackingTab(String tabId) async {
-     await _trackingTabs.doc(tabId).delete();
-     // Optional: Delete associated transactions or move them? 
-     // For now, let's keep it simple. They will become orphaned or hidden. 
-     // Better plan: update their tabId to null (move to main) or delete them.
-     // Let's just create orphans for now to avoid accidental data loss complex logic.
+    await _trackingTabs.doc(tabId).delete();
+    // Optional: Delete associated transactions or move them?
+    // For now, let's keep it simple. They will become orphaned or hidden.
+    // Better plan: update their tabId to null (move to main) or delete them.
+    // Let's just create orphans for now to avoid accidental data loss complex logic.
   }
 
   // Stream tracking tabs for family
@@ -244,10 +255,10 @@ class FirestoreService {
       yield [];
       return;
     }
-    
+
     final userData = userDoc.data() as Map<String, dynamic>?;
     final familyId = userData?['familyId'];
-    
+
     if (familyId == null) {
       yield [];
       return;
@@ -257,13 +268,12 @@ class FirestoreService {
         .where('familyId', isEqualTo: familyId)
         .snapshots()
         .map((snapshot) {
-          final tabs = snapshot.docs
-              .map((doc) => TrackingTab.fromFirestore(doc))
-              .toList();
-          // Sort client-side to avoid needing a composite index
-          tabs.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-          return tabs;
-        });
+      final tabs =
+          snapshot.docs.map((doc) => TrackingTab.fromFirestore(doc)).toList();
+      // Sort client-side to avoid needing a composite index
+      tabs.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      return tabs;
+    });
   }
 
   // ========== TRANSACTION METHODS ==========
@@ -287,7 +297,7 @@ class FirestoreService {
   Future<void> deleteTransaction(String transactionId) async {
     final user = _authService.currentUser;
     if (user == null) throw Exception('Not authenticated');
-    
+
     await _transactions.doc(transactionId).delete();
   }
 
@@ -311,15 +321,15 @@ class FirestoreService {
     // Simplified approach: Fetch familyId once, then stream transactions.
     // We use await to get the initial family ID to avoid asyncExpand blocking issues.
     final userDoc = await _users.doc(user.id).get();
-    
+
     if (!userDoc.exists) {
       yield [];
       return;
     }
-    
+
     final userData = userDoc.data() as Map<String, dynamic>?;
     final familyId = userData?['familyId'];
-    
+
     if (familyId == null) {
       yield [];
       return;
@@ -330,48 +340,50 @@ class FirestoreService {
         .where('familyId', isEqualTo: familyId)
         .snapshots()
         .map((snapshot) {
-          final transactions = snapshot.docs
-              .map((doc) => TransactionModel.fromFirestore(doc))
-              .where((txn) {
-                // Privacy logic: shared = all family sees, private = only owner sees
-                bool isShared = txn.visibility == 'shared';
-                bool isMyPrivate = txn.visibility == 'private' && txn.userId == user.id;
-                return isShared || isMyPrivate;
-              })
-              .toList();
-          
-          // Sort client-side
-          transactions.sort((a, b) => b.date.compareTo(a.date));
-          return transactions;
-        });
+      final transactions = snapshot.docs
+          .map((doc) => TransactionModel.fromFirestore(doc))
+          .where((txn) {
+        // Privacy logic: shared = all family sees, private = only owner sees
+        bool isShared = txn.visibility == 'shared';
+        bool isMyPrivate = txn.visibility == 'private' && txn.userId == user.id;
+        return isShared || isMyPrivate;
+      }).toList();
+
+      // Sort client-side
+      transactions.sort((a, b) => b.date.compareTo(a.date));
+      return transactions;
+    });
   }
 
   // Calculate family total
   double calculateHomeTotal(List<TransactionModel> transactions) {
-     // Only count transactions NOT in a special tab
-    return transactions
-        .where((t) => t.visibility == 'shared' && t.tabId == null)
-        .fold(0.0, (sum, t) => t.type == 'expense' ? sum + t.amount : sum - t.amount);
-  }
-
-  double calculatePersonalSpend(List<TransactionModel> transactions, String userId) {
     // Only count transactions NOT in a special tab
     return transactions
-        .where((t) => t.visibility == 'private' && t.userId == userId && t.type == 'expense' && t.tabId == null)
-        .fold(0.0, (sum, t) => sum + t.amount);
+        .where((t) => t.visibility == 'shared' && t.tabId == null)
+        .fold(0.0,
+            (acc, t) => t.type == 'expense' ? acc + t.amount : acc - t.amount);
   }
 
+  double calculatePersonalSpend(
+      List<TransactionModel> transactions, String userId) {
+    // Only count transactions NOT in a special tab
+    return transactions
+        .where((t) =>
+            t.visibility == 'private' &&
+            t.userId == userId &&
+            t.type == 'expense' &&
+            t.tabId == null)
+        .fold(0.0, (acc, t) => acc + t.amount);
+  }
 
   // ========== CATEGORY METHODS ==========
 
   // Stream categories for a family
   Stream<List<CategoryModel>> streamCategories(String familyId) {
-    return _getCategoriesRef(familyId)
-      .orderBy('name')
-      .snapshots()
-      .map((snapshot) => snapshot.docs
-          .map((doc) => CategoryModel.fromFirestore(doc))
-          .toList());
+    return _getCategoriesRef(familyId).orderBy('name').snapshots().map(
+        (snapshot) => snapshot.docs
+            .map((doc) => CategoryModel.fromFirestore(doc))
+            .toList());
   }
 
   // Add a new category
@@ -394,21 +406,91 @@ class FirestoreService {
     // Standard Categories
     final defaults = [
       // Expenses
-      CategoryModel(id: '', name: 'Grocery', iconCode: 0xe596, type: 'expense', isDefault: true), // shopping_cart
-      CategoryModel(id: '', name: 'Food', iconCode: 0xe532, type: 'expense', isDefault: true), // restaurant
-      CategoryModel(id: '', name: 'Transport', iconCode: 0xe1d7, type: 'expense', isDefault: true), // directions_car
-      CategoryModel(id: '', name: 'Bills', iconCode: 0xef6e, type: 'expense', isDefault: true), // receipt_long
-      CategoryModel(id: '', name: 'Rent', iconCode: 0xe318, type: 'expense', isDefault: true), // home
-      CategoryModel(id: '', name: 'Shopping', iconCode: 0xe59c, type: 'expense', isDefault: true), // shopping_bag
-      CategoryModel(id: '', name: 'Medical', iconCode: 0xe3ae, type: 'expense', isDefault: true), // local_hospital
-      CategoryModel(id: '', name: 'Fun', iconCode: 0xe404, type: 'expense', isDefault: true), // movie
-      CategoryModel(id: '', name: 'Education', iconCode: 0xe559, type: 'expense', isDefault: true), // school
-      CategoryModel(id: '', name: 'Fuel', iconCode: 0xe3ad, type: 'expense', isDefault: true), // local_gas_station
+      CategoryModel(
+          id: '',
+          name: 'Grocery',
+          iconCode: 0xe596,
+          type: 'expense',
+          isDefault: true), // shopping_cart
+      CategoryModel(
+          id: '',
+          name: 'Food',
+          iconCode: 0xe532,
+          type: 'expense',
+          isDefault: true), // restaurant
+      CategoryModel(
+          id: '',
+          name: 'Transport',
+          iconCode: 0xe1d7,
+          type: 'expense',
+          isDefault: true), // directions_car
+      CategoryModel(
+          id: '',
+          name: 'Bills',
+          iconCode: 0xef6e,
+          type: 'expense',
+          isDefault: true), // receipt_long
+      CategoryModel(
+          id: '',
+          name: 'Rent',
+          iconCode: 0xe318,
+          type: 'expense',
+          isDefault: true), // home
+      CategoryModel(
+          id: '',
+          name: 'Shopping',
+          iconCode: 0xe59c,
+          type: 'expense',
+          isDefault: true), // shopping_bag
+      CategoryModel(
+          id: '',
+          name: 'Medical',
+          iconCode: 0xe3ae,
+          type: 'expense',
+          isDefault: true), // local_hospital
+      CategoryModel(
+          id: '',
+          name: 'Fun',
+          iconCode: 0xe404,
+          type: 'expense',
+          isDefault: true), // movie
+      CategoryModel(
+          id: '',
+          name: 'Education',
+          iconCode: 0xe559,
+          type: 'expense',
+          isDefault: true), // school
+      CategoryModel(
+          id: '',
+          name: 'Fuel',
+          iconCode: 0xe3ad,
+          type: 'expense',
+          isDefault: true), // local_gas_station
       // Income
-      CategoryModel(id: '', name: 'Salary', iconCode: 0xe6f2, type: 'income', isDefault: true), // work
-      CategoryModel(id: '', name: 'Business', iconCode: 0xe0af, type: 'income', isDefault: true), // business
-      CategoryModel(id: '', name: 'Gift', iconCode: 0xe8f6, type: 'income', isDefault: true), // card_giftcard
-      CategoryModel(id: '', name: 'Investment', iconCode: 0xe6e1, type: 'income', isDefault: true), // trending_up
+      CategoryModel(
+          id: '',
+          name: 'Salary',
+          iconCode: 0xe6f2,
+          type: 'income',
+          isDefault: true), // work
+      CategoryModel(
+          id: '',
+          name: 'Business',
+          iconCode: 0xe0af,
+          type: 'income',
+          isDefault: true), // business
+      CategoryModel(
+          id: '',
+          name: 'Gift',
+          iconCode: 0xe8f6,
+          type: 'income',
+          isDefault: true), // card_giftcard
+      CategoryModel(
+          id: '',
+          name: 'Investment',
+          iconCode: 0xe6e1,
+          type: 'income',
+          isDefault: true), // trending_up
     ];
 
     final batch = _db.batch();
@@ -448,10 +530,10 @@ class FirestoreService {
       yield [];
       return;
     }
-    
+
     final userData = userDoc.data() as Map<String, dynamic>?;
     final familyId = userData?['familyId'];
-    
+
     if (familyId == null) {
       yield [];
       return;

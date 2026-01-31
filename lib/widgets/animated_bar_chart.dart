@@ -57,16 +57,20 @@ class _AnimatedBarChartState extends State<AnimatedBarChart> {
                 if (value % 5 == 0 && value > 0 && value <= 31) {
                   return Padding(
                     padding: const EdgeInsets.only(top: 8.0),
-                    child: Text(value.toInt().toString(), style: const TextStyle(fontSize: 10)),
+                    child: Text(value.toInt().toString(),
+                        style: const TextStyle(fontSize: 10)),
                   );
                 }
                 return const SizedBox.shrink();
               },
             ),
           ),
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
         gridData: const FlGridData(show: false),
         borderData: FlBorderData(show: false),
@@ -84,17 +88,17 @@ class _AnimatedBarChartState extends State<AnimatedBarChart> {
                 width: 6,
                 borderRadius: BorderRadius.circular(2),
                 backDrawRodData: BackgroundBarChartRodData(
-                  show: true, 
-                  toY: widget.maxSpend * 1.2, 
-                  color: widget.isDark ? Colors.white10 : Colors.grey.shade100
-                ),
+                    show: true,
+                    toY: widget.maxSpend * 1.2,
+                    color:
+                        widget.isDark ? Colors.white10 : Colors.grey.shade100),
               ),
             ],
           );
         }).toList(),
       ),
-      swapAnimationDuration: const Duration(milliseconds: 800), // Smooth grow
-      swapAnimationCurve: Curves.easeOutQuart,
+      duration: const Duration(milliseconds: 800), // Smooth grow
+      curve: Curves.easeOutQuart,
     );
   }
 }

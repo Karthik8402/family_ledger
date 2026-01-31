@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../services/firestore_service.dart';
 import '../services/auth_service.dart';
-import '../models/family_model.dart';
 
 class FamilySetupScreen extends StatefulWidget {
   const FamilySetupScreen({super.key});
@@ -16,7 +15,7 @@ class FamilySetupScreen extends StatefulWidget {
 class _FamilySetupScreenState extends State<FamilySetupScreen> {
   bool _isCreatingFamily = true;
   bool _isLoading = false;
-  
+
   final _familyNameController = TextEditingController();
   final _joinCodeController = TextEditingController();
 
@@ -124,8 +123,16 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: isDark
-                ? [const Color(0xFF1A1A2E), const Color(0xFF16213E), const Color(0xFF0F3460)]
-                : [const Color(0xFF00695C), const Color(0xFF00897B), const Color(0xFF4DB6AC)],
+                ? [
+                    const Color(0xFF1A1A2E),
+                    const Color(0xFF16213E),
+                    const Color(0xFF0F3460)
+                  ]
+                : [
+                    const Color(0xFF00695C),
+                    const Color(0xFF00897B),
+                    const Color(0xFF4DB6AC)
+                  ],
           ),
         ),
         child: SafeArea(
@@ -147,7 +154,9 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
                       size: 64,
                       color: Colors.white,
                     ),
-                  ).animate().scale(duration: 500.ms, curve: Curves.easeOutBack),
+                  )
+                      .animate()
+                      .scale(duration: 500.ms, curve: Curves.easeOutBack),
 
                   const SizedBox(height: 32),
 
@@ -184,12 +193,15 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
                       children: [
                         Expanded(
                           child: GestureDetector(
-                            onTap: () => setState(() => _isCreatingFamily = true),
+                            onTap: () =>
+                                setState(() => _isCreatingFamily = true),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               decoration: BoxDecoration(
-                                color: _isCreatingFamily ? Colors.white : Colors.transparent,
+                                color: _isCreatingFamily
+                                    ? Colors.white
+                                    : Colors.transparent,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -197,7 +209,9 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: _isCreatingFamily ? primaryColor : Colors.white,
+                                  color: _isCreatingFamily
+                                      ? primaryColor
+                                      : Colors.white,
                                 ),
                               ),
                             ),
@@ -205,12 +219,15 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
                         ),
                         Expanded(
                           child: GestureDetector(
-                            onTap: () => setState(() => _isCreatingFamily = false),
+                            onTap: () =>
+                                setState(() => _isCreatingFamily = false),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               decoration: BoxDecoration(
-                                color: !_isCreatingFamily ? Colors.white : Colors.transparent,
+                                color: !_isCreatingFamily
+                                    ? Colors.white
+                                    : Colors.transparent,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -218,7 +235,9 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: !_isCreatingFamily ? primaryColor : Colors.white,
+                                  color: !_isCreatingFamily
+                                      ? primaryColor
+                                      : Colors.white,
                                 ),
                               ),
                             ),
@@ -234,7 +253,7 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: isDark 
+                      color: isDark
                           ? Colors.white.withValues(alpha: 0.08)
                           : Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(24),
@@ -245,7 +264,9 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
                     ),
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
-                      child: _isCreatingFamily ? _buildCreateForm() : _buildJoinForm(),
+                      child: _isCreatingFamily
+                          ? _buildCreateForm()
+                          : _buildJoinForm(),
                     ),
                   ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1, end: 0),
                 ],
@@ -296,7 +317,8 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+              borderSide:
+                  BorderSide(color: Colors.white.withValues(alpha: 0.2)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
@@ -360,7 +382,7 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
         TextFormField(
           controller: _joinCodeController,
           style: const TextStyle(
-            color: Colors.white, 
+            color: Colors.white,
             fontSize: 24,
             fontWeight: FontWeight.bold,
             letterSpacing: 8,
@@ -387,7 +409,8 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+              borderSide:
+                  BorderSide(color: Colors.white.withValues(alpha: 0.2)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),

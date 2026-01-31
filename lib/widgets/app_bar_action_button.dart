@@ -30,9 +30,8 @@ class _AppBarActionButtonState extends State<AppBarActionButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  late Animation<double> _glowAnimation;
-  bool _isHovered = false;
 
+  bool _isHovered = false;
 
   @override
   void initState() {
@@ -43,9 +42,6 @@ class _AppBarActionButtonState extends State<AppBarActionButton>
     );
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.92).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-    _glowAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
   }
 
@@ -77,14 +73,22 @@ class _AppBarActionButtonState extends State<AppBarActionButton>
     final bgColor = widget.isActive
         ? primaryColor.withValues(alpha: isDark ? 0.2 : 0.12)
         : (_isHovered
-            ? (isDark ? Colors.white.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.08))
-            : (isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.04)));
+            ? (isDark
+                ? Colors.white.withValues(alpha: 0.12)
+                : Colors.black.withValues(alpha: 0.08))
+            : (isDark
+                ? Colors.white.withValues(alpha: 0.06)
+                : Colors.black.withValues(alpha: 0.04)));
 
     final borderColor = widget.isActive
         ? primaryColor.withValues(alpha: 0.3)
         : (_isHovered
-            ? (isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.1))
-            : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04)));
+            ? (isDark
+                ? Colors.white.withValues(alpha: 0.15)
+                : Colors.black.withValues(alpha: 0.1))
+            : (isDark
+                ? Colors.white.withValues(alpha: 0.05)
+                : Colors.black.withValues(alpha: 0.04)));
 
     final iconColor = widget.isActive
         ? primaryColor
@@ -139,7 +143,8 @@ class _AppBarActionButtonState extends State<AppBarActionButton>
                           transitionBuilder: (child, animation) {
                             return ScaleTransition(
                               scale: animation,
-                              child: FadeTransition(opacity: animation, child: child),
+                              child: FadeTransition(
+                                  opacity: animation, child: child),
                             );
                           },
                           child: Icon(
@@ -227,7 +232,6 @@ class _ThemeToggleButtonState extends State<ThemeToggleButton>
       end: 1.0,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
-
     if (widget.isDark) {
       _controller.value = 1.0;
     }
@@ -253,7 +257,6 @@ class _ThemeToggleButtonState extends State<ThemeToggleButton>
 
   @override
   Widget build(BuildContext context) {
-
     const sunColor = Color(0xFFFFB300);
     const moonColor = Color(0xFF90CAF9);
 
@@ -263,12 +266,14 @@ class _ThemeToggleButtonState extends State<ThemeToggleButton>
       child: GestureDetector(
         onTap: widget.onToggle,
         child: Tooltip(
-          message: widget.isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+          message:
+              widget.isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
           preferBelow: false,
           child: AnimatedBuilder(
             animation: _controller,
             builder: (context, child) {
-              final color = Color.lerp(sunColor, moonColor, _rotationAnimation.value)!;
+              final color =
+                  Color.lerp(sunColor, moonColor, _rotationAnimation.value)!;
               return AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 margin: const EdgeInsets.symmetric(horizontal: 3),
@@ -277,12 +282,16 @@ class _ThemeToggleButtonState extends State<ThemeToggleButton>
                   gradient: LinearGradient(
                     colors: widget.isDark
                         ? [
-                            const Color(0xFF1a1a2e).withValues(alpha: _isHovered ? 0.9 : 0.7),
-                            const Color(0xFF16213e).withValues(alpha: _isHovered ? 0.9 : 0.7),
+                            const Color(0xFF1a1a2e)
+                                .withValues(alpha: _isHovered ? 0.9 : 0.7),
+                            const Color(0xFF16213e)
+                                .withValues(alpha: _isHovered ? 0.9 : 0.7),
                           ]
                         : [
-                            const Color(0xFFFFF8E1).withValues(alpha: _isHovered ? 0.9 : 0.7),
-                            const Color(0xFFFFECB3).withValues(alpha: _isHovered ? 0.9 : 0.7),
+                            const Color(0xFFFFF8E1)
+                                .withValues(alpha: _isHovered ? 0.9 : 0.7),
+                            const Color(0xFFFFECB3)
+                                .withValues(alpha: _isHovered ? 0.9 : 0.7),
                           ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -306,7 +315,9 @@ class _ThemeToggleButtonState extends State<ThemeToggleButton>
                   child: Transform.scale(
                     scale: _isHovered ? 1.1 : 1.0,
                     child: Icon(
-                      widget.isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                      widget.isDark
+                          ? Icons.dark_mode_rounded
+                          : Icons.light_mode_rounded,
                       size: 20,
                       color: color,
                     ),

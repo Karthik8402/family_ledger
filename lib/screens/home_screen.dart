@@ -36,11 +36,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  
+
   // Tab State
   TabController? _tabController;
-  List<TrackingTab> _tabs = [];
-  bool _isLoadingTabs = true;
 
   // Advanced Filter State
   FilterModel _advancedFilter = FilterModel.empty;
@@ -56,21 +54,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Future<void> _syncUserProfile() async {
     final authService = Provider.of<AuthService>(context, listen: false);
-    final firestoreService = Provider.of<FirestoreService>(context, listen: false);
+    final firestoreService =
+        Provider.of<FirestoreService>(context, listen: false);
     final user = authService.currentUser;
-    
+
     if (user != null) {
       await firestoreService.syncGoogleProfile(
-        user.id, 
-        user.displayName, 
-        user.email, 
-        user.photoUrl
-      );
-      
+          user.id, user.displayName, user.email, user.photoUrl);
+
       // Load family members for filter
       final userProfile = await firestoreService.getUserProfile(user.id);
       if (userProfile?.familyId != null && mounted) {
-        final members = await firestoreService.getFamilyMembers(userProfile!.familyId!);
+        final members =
+            await firestoreService.getFamilyMembers(userProfile!.familyId!);
         setState(() => _familyMembers = members);
       }
     }
@@ -78,10 +74,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   void _showFilterSheet(List<TransactionModel> transactions) {
     // Get unique categories from transactions
-    final categories = transactions
-        .map((t) => t.category)
-        .toSet()
-        .toList()
+    final categories = transactions.map((t) => t.category).toSet().toList()
       ..sort();
 
     FilterSheet.show(
@@ -109,9 +102,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       final oldIndex = _tabController?.index ?? 0;
       _tabController?.dispose();
       _tabController = TabController(
-        length: actualLength, 
+        length: actualLength,
         vsync: this,
-        initialIndex: oldIndex < newLength ? oldIndex : 0, // Don't start on + tab
+        initialIndex:
+            oldIndex < newLength ? oldIndex : 0, // Don't start on + tab
       );
       _tabController!.addListener(() {
         // If user taps the "+" tab, show dialog and go back
@@ -140,11 +134,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           textCapitalization: TextCapitalization.sentences,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
           FilledButton(
             onPressed: () async {
               if (controller.text.trim().isNotEmpty) {
-                await Provider.of<FirestoreService>(context, listen: false).createTrackingTab(controller.text.trim());
+                await Provider.of<FirestoreService>(context, listen: false)
+                    .createTrackingTab(controller.text.trim());
                 if (mounted) Navigator.pop(context);
               }
             },
@@ -160,12 +157,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Tab?'),
-        content: Text('Are you sure you want to delete "${tab.name}"? Transactions in this tab will NOT be deleted but will effectively disappear from this view.'),
+        content: Text(
+            'Are you sure you want to delete "${tab.name}"? Transactions in this tab will NOT be deleted but will effectively disappear from this view.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
           TextButton(
             onPressed: () async {
-              await Provider.of<FirestoreService>(context, listen: false).deleteTrackingTab(tab.id);
+              await Provider.of<FirestoreService>(context, listen: false)
+                  .deleteTrackingTab(tab.id);
               if (mounted) Navigator.pop(context);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -188,101 +189,105 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       builder: (context, tabSnapshot) {
         // Handle Tabs
         final trackingTabs = tabSnapshot.data ?? [];
-        final totalTabs = 2 + trackingTabs.length; // Expenses + Income + Custom Tabs
-        
+        final totalTabs =
+            2 + trackingTabs.length; // Expenses + Income + Custom Tabs
+
         // Update Controller safely
         _updateTabController(totalTabs); // Only recreates if length changes
 
         return ConnectivityBanner(
           child: Scaffold(
             appBar: _buildAppBar(trackingTabs),
-          body: StreamBuilder<List<TransactionModel>>(
-            stream: firestoreService.getTransactions(),
-            builder: (context, txnSnapshot) {
-              // if (txnSnapshot.connectionState == ConnectionState.waiting) {
-              //    return const Center(child: CircularProgressIndicator());
-              // }
-              
-              final allTransactions = txnSnapshot.data ?? [];
-              // Store for filter sheet access
-              if (allTransactions.isNotEmpty && _allTransactions.isEmpty) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) setState(() => _allTransactions = allTransactions);
-                });
-              } else if (allTransactions.length != _allTransactions.length) {
-                _allTransactions = allTransactions;
-              }
-              final filteredTransactions = _filterTransactions(allTransactions);
+            body: StreamBuilder<List<TransactionModel>>(
+              stream: firestoreService.getTransactions(),
+              builder: (context, txnSnapshot) {
+                // if (txnSnapshot.connectionState == ConnectionState.waiting) {
+                //    return const Center(child: CircularProgressIndicator());
+                // }
 
-              return TabBarView(
-                controller: _tabController,
-                children: [
-                   // 1. Expenses Tab (Main)
-                  _buildTransactionTab(
-                    context, 
-                    filteredTransactions, 
-                    TransactionModel.typeExpense, 
-                    currentUserId,
-                    Colors.redAccent,
-                    'Total Expenses',
-                    Icons.arrow_downward,
-                    tabId: null, // Main tab
-                  ),
-                  
-                  // 2. Income Tab (Main)
-                  _buildTransactionTab(
-                    context, 
-                    filteredTransactions, 
-                    TransactionModel.typeIncome, 
-                    currentUserId,
-                    Colors.greenAccent,
-                    'Total Income',
-                    Icons.arrow_upward,
-                    tabId: null, // Main tab
-                  ),
+                final allTransactions = txnSnapshot.data ?? [];
+                // Store for filter sheet access
+                if (allTransactions.isNotEmpty && _allTransactions.isEmpty) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted)
+                      setState(() => _allTransactions = allTransactions);
+                  });
+                } else if (allTransactions.length != _allTransactions.length) {
+                  _allTransactions = allTransactions;
+                }
+                final filteredTransactions =
+                    _filterTransactions(allTransactions);
 
-                  // 3+. Custom Tracking Tabs
-                  ...trackingTabs.map((tab) => _buildCustomTab(
-                    context,
-                    filteredTransactions,
-                    currentUserId,
-                    tab,
-                  )),
+                return TabBarView(
+                  controller: _tabController,
+                  children: [
+                    // 1. Expenses Tab (Main)
+                    _buildTransactionTab(
+                      context,
+                      filteredTransactions,
+                      TransactionModel.typeExpense,
+                      currentUserId,
+                      Colors.redAccent,
+                      'Total Expenses',
+                      Icons.arrow_downward,
+                      tabId: null, // Main tab
+                    ),
 
-                  // Placeholder for + tab (user never sees this as tapping + opens dialog)
-                  const SizedBox.shrink(),
-                ],
-              );
-            },
-          ),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: () {
-              final index = _tabController!.index;
-              String? initialType;
-              String? initialTabId;
+                    // 2. Income Tab (Main)
+                    _buildTransactionTab(
+                      context,
+                      filteredTransactions,
+                      TransactionModel.typeIncome,
+                      currentUserId,
+                      Colors.greenAccent,
+                      'Total Income',
+                      Icons.arrow_upward,
+                      tabId: null, // Main tab
+                    ),
 
-              if (index == 0) {
-                initialType = TransactionModel.typeExpense;
-              } else if (index == 1) {
-                initialType = TransactionModel.typeIncome;
-              } else {
-                // Custom Tab
-                initialTabId = trackingTabs[index - 2].id;
-              }
-                  
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => AddTransactionScreen(
-                  initialType: initialType,
-                  initialTabId: initialTabId,
-                )),
-              );
-            },
-            label: const Text('Add New'),
-            icon: const Icon(Icons.add_circle_outline),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            foregroundColor: Colors.white,
-          ).animate().scale(delay: 500.ms),
+                    // 3+. Custom Tracking Tabs
+                    ...trackingTabs.map((tab) => _buildCustomTab(
+                          context,
+                          filteredTransactions,
+                          currentUserId,
+                          tab,
+                        )),
+
+                    // Placeholder for + tab (user never sees this as tapping + opens dialog)
+                    const SizedBox.shrink(),
+                  ],
+                );
+              },
+            ),
+            floatingActionButton: FloatingActionButton.extended(
+              onPressed: () {
+                final index = _tabController!.index;
+                String? initialType;
+                String? initialTabId;
+
+                if (index == 0) {
+                  initialType = TransactionModel.typeExpense;
+                } else if (index == 1) {
+                  initialType = TransactionModel.typeIncome;
+                } else {
+                  // Custom Tab
+                  initialTabId = trackingTabs[index - 2].id;
+                }
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => AddTransactionScreen(
+                            initialType: initialType,
+                            initialTabId: initialTabId,
+                          )),
+                );
+              },
+              label: const Text('Add New'),
+              icon: const Icon(Icons.add_circle_outline),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Colors.white,
+            ).animate().scale(delay: 500.ms),
           ),
         );
       },
@@ -301,7 +306,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 border: InputBorder.none,
                 filled: false,
               ),
-              onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
+              onChanged: (value) =>
+                  setState(() => _searchQuery = value.toLowerCase()),
             )
           : const Text('Family Ledger'),
       bottom: TabBar(
@@ -314,46 +320,45 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           const Tab(text: 'Expenses', icon: Icon(Icons.credit_card)),
           const Tab(text: 'Income', icon: Icon(Icons.savings)),
           ...customTabs.map((tab) => Tab(
-            text: tab.name,
-            icon: const Icon(Icons.label_important_outline),
-          )),
+                text: tab.name,
+                icon: const Icon(Icons.label_important_outline),
+              )),
           // Add Tab button as last tab
           const Tab(icon: Icon(Icons.add_circle_outline), text: 'New'),
         ],
       ),
       actions: [
-
         // Filter button - only visible in search mode
         if (_isSearching) ...[
-           Stack(
-             children: [
-               IconButton(
-                 icon: const Icon(Icons.filter_list),
-                 tooltip: 'Filters',
-                 onPressed: () => _showFilterSheet(_allTransactions),
-               ),
-               if (_advancedFilter.hasActiveFilters)
-                 Positioned(
-                   right: 4,
-                   top: 4,
-                   child: Container(
-                     padding: const EdgeInsets.all(4),
-                     decoration: BoxDecoration(
-                       color: Theme.of(context).colorScheme.primary,
-                       shape: BoxShape.circle,
-                     ),
-                     child: Text(
-                       '${_advancedFilter.activeFilterCount}',
-                       style: const TextStyle(
-                         color: Colors.white,
-                         fontSize: 10,
-                         fontWeight: FontWeight.bold,
-                       ),
-                     ),
-                   ),
-                 ),
-             ],
-           ),
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.filter_list),
+                tooltip: 'Filters',
+                onPressed: () => _showFilterSheet(_allTransactions),
+              ),
+              if (_advancedFilter.hasActiveFilters)
+                Positioned(
+                  right: 4,
+                  top: 4,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '${_advancedFilter.activeFilterCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ],
         // Existing Actions
         Padding(
@@ -367,7 +372,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   _isSearching = false;
                   _searchQuery = '';
                   _searchController.clear();
-                  _advancedFilter = FilterModel.empty; // Clear filters when exiting search
+                  _advancedFilter =
+                      FilterModel.empty; // Clear filters when exiting search
                 } else {
                   _isSearching = true;
                 }
@@ -389,11 +395,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             tooltip: 'Stats',
             onPressed: () {
               Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => StatsScreen(month: _selectedMonth, year: _selectedYear),
-                  ),
-                );
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      StatsScreen(month: _selectedMonth, year: _selectedYear),
+                ),
+              );
             },
           ),
           AppBarActionButton(
@@ -419,25 +426,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   // --- Main Tabs (Expense / Income) ---
   Widget _buildTransactionTab(
-    BuildContext context, 
-    List<TransactionModel> allTransactions, 
-    String type, 
-    String currentUserId,
-    Color color,
-    String totalLabel,
-    IconData totalIcon,
-    {required String? tabId}
-  ) {
+      BuildContext context,
+      List<TransactionModel> allTransactions,
+      String type,
+      String currentUserId,
+      Color color,
+      String totalLabel,
+      IconData totalIcon,
+      {required String? tabId}) {
     // Filter by type AND tabId
     // For main tabs, tabId is null, so we show transactions where t.tabId == null
-    final tabTransactions = allTransactions.where((t) => t.type == type && t.tabId == tabId).toList();
-    
+    final tabTransactions = allTransactions
+        .where((t) => t.type == type && t.tabId == tabId)
+        .toList();
+
     // Calculate Totals
-    final sharedSum = _calculateTotal(tabTransactions, type, TransactionModel.visibilityShared);
-    final myPrivateSum = _calculateTotal(tabTransactions, type, TransactionModel.visibilityPrivate, userId: currentUserId);
+    final sharedSum = _calculateTotal(
+        tabTransactions, type, TransactionModel.visibilityShared);
+    final myPrivateSum = _calculateTotal(
+        tabTransactions, type, TransactionModel.visibilityPrivate,
+        userId: currentUserId);
 
     // Calculate search results total
-    final searchResultsTotal = tabTransactions.fold(0.0, (sum, t) => sum + t.amount);
+    final searchResultsTotal =
+        tabTransactions.fold(0.0, (sum, t) => sum + t.amount);
 
     return CustomScrollView(
       slivers: [
@@ -449,20 +461,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               children: [
                 _buildDateSelector(),
                 const SizedBox(height: 24),
-                
+
                 // Show Search Results Summary if searching
                 if (_searchQuery.isNotEmpty) ...[
-                  _buildSearchResultsCard(tabTransactions.length, searchResultsTotal, color),
+                  _buildSearchResultsCard(
+                      tabTransactions.length, searchResultsTotal, color),
                   const SizedBox(height: 16),
                 ] else ...[
-                  _buildTypeStatCard(totalLabel, sharedSum, color, totalIcon, myPrivateSum)
-                      .animate().slideY(begin: 0.2, end: 0, duration: 250.ms, curve: Curves.easeOut).fadeIn(),
+                  _buildTypeStatCard(
+                          totalLabel, sharedSum, color, totalIcon, myPrivateSum)
+                      .animate()
+                      .slideY(
+                          begin: 0.2,
+                          end: 0,
+                          duration: 250.ms,
+                          curve: Curves.easeOut)
+                      .fadeIn(),
                 ],
-                
+
                 const SizedBox(height: 32),
                 Text(
                   _searchQuery.isNotEmpty ? 'Search Results' : 'Recent $type',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ).animate().fadeIn(delay: 200.ms),
               ],
             ),
@@ -476,19 +499,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   // --- Custom Tracking Tabs ---
   Widget _buildCustomTab(
-    BuildContext context, 
-    List<TransactionModel> allTransactions, 
+    BuildContext context,
+    List<TransactionModel> allTransactions,
     String currentUserId,
     TrackingTab tab,
   ) {
     // Filter transactions for this tab
-    final tabTransactions = allTransactions.where((t) => t.tabId == tab.id).toList();
-    
+    final tabTransactions =
+        allTransactions.where((t) => t.tabId == tab.id).toList();
+
     // Calculate stats specifically for this tab
     // Income - Expense
-    final income = tabTransactions.where((t) => t.type == TransactionModel.typeIncome).fold(0.0, (sum, t) => sum + t.amount);
-    final expense = tabTransactions.where((t) => t.type == TransactionModel.typeExpense).fold(0.0, (sum, t) => sum + t.amount);
-    final balance = income - expense;
+    final income = tabTransactions
+        .where((t) => t.type == TransactionModel.typeIncome)
+        .fold(0.0, (sum, t) => sum + t.amount);
+    final expense = tabTransactions
+        .where((t) => t.type == TransactionModel.typeExpense)
+        .fold(0.0, (sum, t) => sum + t.amount);
 
     return CustomScrollView(
       slivers: [
@@ -500,19 +527,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               children: [
                 Row(
                   children: [
-                    Expanded(child: _buildDateSelector()), // Wrap in Expanded to fill space
+                    Expanded(
+                        child:
+                            _buildDateSelector()), // Wrap in Expanded to fill space
                     const SizedBox(width: 8),
                     IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.grey), 
+                      icon:
+                          const Icon(Icons.delete_outline, color: Colors.grey),
                       onPressed: () => _deleteTab(tab),
                       tooltip: 'Delete Tab',
                     ),
                   ],
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Custom Tab Summary Card
-                 Container(
+                Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
@@ -523,51 +553,72 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
-                      BoxShadow(color: Colors.blue.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 10)),
+                      BoxShadow(
+                          color: Colors.blue.withValues(alpha: 0.3),
+                          blurRadius: 15,
+                          offset: const Offset(0, 10)),
                     ],
                   ),
                   child: Column(
                     children: [
-                      Text(tab.name, style: const TextStyle(color: Colors.white70, fontSize: 16)),
+                      Text(tab.name,
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 16)),
                       const SizedBox(height: 24),
-                       Row(
+                      Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                           Column(
-                             children: [
-                               const Text('Income', style: TextStyle(color: Colors.white70, fontSize: 14)),
-                               const SizedBox(height: 8),
-                               Text(
-                                 '₹${income.toStringAsFixed(2)}', 
-                                 style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-                               ),
-                               const SizedBox(height: 4),
-                               const Icon(Icons.arrow_downward, color: Colors.greenAccent, size: 20),
-                             ],
-                           ),
-                           Container(width: 1, height: 50, color: Colors.white24),
-                           Column(
-                             children: [
-                               const Text('Expense', style: TextStyle(color: Colors.white70, fontSize: 14)),
-                               const SizedBox(height: 8),
-                               Text(
-                                 '₹${expense.toStringAsFixed(2)}', 
-                                 style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-                               ),
-                               const SizedBox(height: 4),
-                               const Icon(Icons.arrow_upward, color: Colors.redAccent, size: 20),
-                             ],
-                           ),
+                          Column(
+                            children: [
+                              const Text('Income',
+                                  style: TextStyle(
+                                      color: Colors.white70, fontSize: 14)),
+                              const SizedBox(height: 8),
+                              Text(
+                                '₹${income.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 4),
+                              const Icon(Icons.arrow_downward,
+                                  color: Colors.greenAccent, size: 20),
+                            ],
+                          ),
+                          Container(
+                              width: 1, height: 50, color: Colors.white24),
+                          Column(
+                            children: [
+                              const Text('Expense',
+                                  style: TextStyle(
+                                      color: Colors.white70, fontSize: 14)),
+                              const SizedBox(height: 8),
+                              Text(
+                                '₹${expense.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 4),
+                              const Icon(Icons.arrow_upward,
+                                  color: Colors.redAccent, size: 20),
+                            ],
+                          ),
                         ],
                       )
                     ],
                   ),
                 ).animate().fadeIn(duration: 300.ms), // Removed slideY
-                
+
                 const SizedBox(height: 32),
                 Text(
                   'Transactions',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ).animate().fadeIn(delay: 200.ms),
               ],
             ),
@@ -579,7 +630,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildTransactionList(List<TransactionModel> transactions, String currentUserId, String typeLabel) {
+  Widget _buildTransactionList(List<TransactionModel> transactions,
+      String currentUserId, String typeLabel) {
     if (transactions.isEmpty) {
       return SliverFillRemaining(
         hasScrollBody: false,
@@ -595,13 +647,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       );
     }
-    
+
     return SliverList(
       delegate: SliverChildBuilderDelegate(
         (context, index) {
           final transaction = transactions[index];
           return _buildTransactionItem(transaction, currentUserId)
-              .animate().slideX(begin: 1.0, end: 0, delay: (50 * index).ms, duration: 400.ms, curve: Curves.easeOut).fadeIn(); // Right to Left
+              .animate()
+              .slideX(
+                  begin: 1.0,
+                  end: 0,
+                  delay: (50 * index).ms,
+                  duration: 400.ms,
+                  curve: Curves.easeOut)
+              .fadeIn(); // Right to Left
         },
         childCount: transactions.length,
       ),
@@ -617,7 +676,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildTypeStatCard(String title, double sharedAmount, Color color, IconData icon, double privateAmount) {
+  Widget _buildTypeStatCard(String title, double sharedAmount, Color color,
+      IconData icon, double privateAmount) {
     return StatCardWidget(
       title: title,
       sharedAmount: sharedAmount,
@@ -626,7 +686,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       icon: icon,
     );
   }
-  Widget _buildTransactionItem(TransactionModel transaction, String currentUserId) {
+
+  Widget _buildTransactionItem(
+      TransactionModel transaction, String currentUserId) {
     return TransactionItemWidget(
       transaction: transaction,
       currentUserId: currentUserId,
@@ -687,21 +749,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   // --- Helper Methods ---
 
-  Widget _buildBalanceDetail(IconData icon, String label, double amount, Color color) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 28),
-        const SizedBox(height: 4),
-        Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
-        const SizedBox(height: 4),
-        Text(
-          '₹${amount.toStringAsFixed(2)}',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
-        ),
-      ],
-    );
-  }
-
   // Search Results Summary Card
   Widget _buildSearchResultsCard(int count, double total, Color color) {
     return Container(
@@ -720,7 +767,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               const SizedBox(width: 8),
               Text(
                 'Results for "$_searchQuery"',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color),
+                style: TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.bold, color: color),
               ),
             ],
           ),
@@ -730,15 +778,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             children: [
               Column(
                 children: [
-                  Text('$count', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: color)),
-                  Text('Transactions', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
+                  Text('$count',
+                      style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: color)),
+                  Text('Transactions',
+                      style: TextStyle(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6))),
                 ],
               ),
-              Container(width: 1, height: 40, color: color.withValues(alpha: 0.3)),
+              Container(
+                  width: 1, height: 40, color: color.withValues(alpha: 0.3)),
               Column(
                 children: [
-                  Text('₹${total.toStringAsFixed(2)}', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: color)),
-                  Text('Total Amount', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
+                  Text('₹${total.toStringAsFixed(2)}',
+                      style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: color)),
+                  Text('Total Amount',
+                      style: TextStyle(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6))),
                 ],
               ),
             ],
@@ -749,142 +816,72 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   List<TransactionModel> _filterTransactions(List<TransactionModel> all) {
-     return all.where((t) {
-        // Basic date filter (month/year selector)
-        final matchesDate = t.date.month == _selectedMonth && t.date.year == _selectedYear;
-        
-        // Search Logic
-        final query = _searchQuery.toLowerCase().trim();
-        final matchesSearch = _searchQuery.isEmpty || 
-                              t.category.toLowerCase().contains(query) || 
-                              t.amount.toString().contains(query) ||
-                              t.userName.toLowerCase().contains(query);
-        
-        // Advanced Filters
-        bool matchesAdvanced = true;
-        
-        // Date range filter (overrides month/year if set)
-        if (_advancedFilter.startDate != null && _advancedFilter.endDate != null) {
-          final afterStart = !t.date.isBefore(_advancedFilter.startDate!);
-          final beforeEnd = !t.date.isAfter(_advancedFilter.endDate!.add(const Duration(days: 1)));
-          matchesAdvanced = matchesAdvanced && afterStart && beforeEnd;
-        }
-        
-        // Category filter
-        if (_advancedFilter.categories.isNotEmpty) {
-          matchesAdvanced = matchesAdvanced && _advancedFilter.categories.contains(t.category);
-        }
-        
-        // Amount range filter
-        if (_advancedFilter.minAmount != null) {
-          matchesAdvanced = matchesAdvanced && t.amount >= _advancedFilter.minAmount!;
-        }
-        if (_advancedFilter.maxAmount != null) {
-          matchesAdvanced = matchesAdvanced && t.amount <= _advancedFilter.maxAmount!;
-        }
-        
-        // Member filter
-        if (_advancedFilter.memberIds.isNotEmpty) {
-          matchesAdvanced = matchesAdvanced && _advancedFilter.memberIds.contains(t.userId);
-        }
-        
-        // If advanced date filter is set, ignore basic month/year filter
-        final useBasicDateFilter = _advancedFilter.startDate == null && _advancedFilter.endDate == null;
-        
-        return (useBasicDateFilter ? matchesDate : true) && matchesSearch && matchesAdvanced;
-     }).toList()
-       ..sort((a, b) => b.date.compareTo(a.date)); // Sort by date descending
+    return all.where((t) {
+      // Basic date filter (month/year selector)
+      final matchesDate =
+          t.date.month == _selectedMonth && t.date.year == _selectedYear;
+
+      // Search Logic
+      final query = _searchQuery.toLowerCase().trim();
+      final matchesSearch = _searchQuery.isEmpty ||
+          t.category.toLowerCase().contains(query) ||
+          t.amount.toString().contains(query) ||
+          t.userName.toLowerCase().contains(query);
+
+      // Advanced Filters
+      bool matchesAdvanced = true;
+
+      // Date range filter (overrides month/year if set)
+      if (_advancedFilter.startDate != null &&
+          _advancedFilter.endDate != null) {
+        final afterStart = !t.date.isBefore(_advancedFilter.startDate!);
+        final beforeEnd = !t.date
+            .isAfter(_advancedFilter.endDate!.add(const Duration(days: 1)));
+        matchesAdvanced = matchesAdvanced && afterStart && beforeEnd;
+      }
+
+      // Category filter
+      if (_advancedFilter.categories.isNotEmpty) {
+        matchesAdvanced =
+            matchesAdvanced && _advancedFilter.categories.contains(t.category);
+      }
+
+      // Amount range filter
+      if (_advancedFilter.minAmount != null) {
+        matchesAdvanced =
+            matchesAdvanced && t.amount >= _advancedFilter.minAmount!;
+      }
+      if (_advancedFilter.maxAmount != null) {
+        matchesAdvanced =
+            matchesAdvanced && t.amount <= _advancedFilter.maxAmount!;
+      }
+
+      // Member filter
+      if (_advancedFilter.memberIds.isNotEmpty) {
+        matchesAdvanced =
+            matchesAdvanced && _advancedFilter.memberIds.contains(t.userId);
+      }
+
+      // If advanced date filter is set, ignore basic month/year filter
+      final useBasicDateFilter =
+          _advancedFilter.startDate == null && _advancedFilter.endDate == null;
+
+      return (useBasicDateFilter ? matchesDate : true) &&
+          matchesSearch &&
+          matchesAdvanced;
+    }).toList()
+      ..sort((a, b) => b.date.compareTo(a.date)); // Sort by date descending
   }
 
-  double _calculateTotal(List<TransactionModel> txs, String type, String visibility, {String? userId}) {
-    return txs
-        .where((t) {
-          final matchesType = t.type == type;
-          final matchesVis = t.visibility == visibility;
-          final matchesUser = userId == null || t.userId == userId;
-          return matchesType && matchesVis && matchesUser;
-        })
-        .fold(0.0, (sum, t) => sum + t.amount);
-  }
-
-  // Modern overlay toast that appears on top of everything
-  void _showModernToast(BuildContext context, String message, IconData icon, Color color) {
-    final overlay = Overlay.of(context);
-    late OverlayEntry overlayEntry;
-    
-    overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        top: MediaQuery.of(context).padding.top + 20,
-        left: 20,
-        right: 20,
-        child: Material(
-          color: Colors.transparent,
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-            builder: (context, value, child) {
-              return Transform.scale(
-                scale: 0.8 + (0.2 * value),
-                child: Opacity(
-                  opacity: value.clamp(0.0, 1.0),
-                  child: child,
-                ),
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [color.withValues(alpha: 0.9), color.withValues(alpha: 0.7)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.4),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(icon, color: Colors.white, size: 20),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      message,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    overlay.insert(overlayEntry);
-
-    // Auto-dismiss after 2 seconds with fade-out
-    Future.delayed(const Duration(seconds: 2), () {
-      overlayEntry.remove();
-    });
+  double _calculateTotal(
+      List<TransactionModel> txs, String type, String visibility,
+      {String? userId}) {
+    return txs.where((t) {
+      final matchesType = t.type == type;
+      final matchesVis = t.visibility == visibility;
+      final matchesUser = userId == null || t.userId == userId;
+      return matchesType && matchesVis && matchesUser;
+    }).fold(0.0, (sum, t) => sum + t.amount);
   }
 
   void _showFamilyInfoSheet(BuildContext context) {
@@ -892,8 +889,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final user = authService.currentUser;
     if (user == null) return;
 
-    final firestoreService = Provider.of<FirestoreService>(context, listen: false);
-    
+    final firestoreService =
+        Provider.of<FirestoreService>(context, listen: false);
+
     showFamilyInfoSheet(
       context: context,
       firestoreService: firestoreService,
