@@ -11,8 +11,16 @@ import 'category_management_screen.dart';
 class AddTransactionScreen extends StatefulWidget {
   final String? initialType;
   final String? initialTabId;
+  final TransactionModel? editTransaction;
 
-  const AddTransactionScreen({super.key, this.initialType, this.initialTabId});
+  const AddTransactionScreen({
+    super.key,
+    this.initialType,
+    this.initialTabId,
+    this.editTransaction,
+  });
+
+  bool get isEditMode => editTransaction != null;
 
   @override
   State<AddTransactionScreen> createState() => _AddTransactionScreenState();
@@ -32,7 +40,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   @override
   void initState() {
     super.initState();
-    _transactionType = widget.initialType ?? TransactionModel.typeExpense;
+    
+    // Edit mode: pre-fill form with existing transaction data
+    if (widget.isEditMode) {
+      final tx = widget.editTransaction!;
+      _amountController.text = tx.amount.toString();
+      _noteController.text = tx.note;
+      _transactionType = tx.type;
+      _selectedCategory = tx.category;
+      _isPrivate = tx.visibility == TransactionModel.visibilityPrivate;
+    } else {
+      _transactionType = widget.initialType ?? TransactionModel.typeExpense;
+    }
+    
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadFamilyId());
   }
 
@@ -91,24 +111,47 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       final String uName = user?.email ?? 'Test User'; 
 
       try {
-        final transaction = TransactionModel(
-          id: '',
-          amount: double.parse(_amountController.text),
-          category: _selectedCategory!,
-          date: DateTime.now(),
-          userId: uid,
-          userName: uName,
-          type: _transactionType,
-          visibility: _isPrivate ? TransactionModel.visibilityPrivate : TransactionModel.visibilityShared,
-          tabId: widget.initialTabId,
-          note: _noteController.text.trim(),
-        );
-
-        await Provider.of<FirestoreService>(context, listen: false).addTransaction(transaction);
-
-        if (mounted) {
-          ToastUtils.showSuccess(context, 'Transaction added!');
-          Navigator.pop(context);
+        final firestoreService = Provider.of<FirestoreService>(context, listen: false);
+        
+        if (widget.isEditMode) {
+          // Update existing transaction
+          final updatedTransaction = TransactionModel(
+            id: widget.editTransaction!.id,
+            amount: double.parse(_amountController.text),
+            category: _selectedCategory!,
+            date: widget.editTransaction!.date, // Keep original date
+            userId: widget.editTransaction!.userId,
+            userName: widget.editTransaction!.userName,
+            type: _transactionType,
+            visibility: _isPrivate ? TransactionModel.visibilityPrivate : TransactionModel.visibilityShared,
+            familyId: widget.editTransaction!.familyId, // Keep original familyId
+            tabId: widget.initialTabId ?? widget.editTransaction!.tabId,
+            note: _noteController.text.trim(),
+          );
+          await firestoreService.updateTransaction(updatedTransaction);
+          if (mounted) {
+            ToastUtils.showSuccess(context, 'Transaction updated!');
+            Navigator.pop(context);
+          }
+        } else {
+          // Add new transaction
+          final transaction = TransactionModel(
+            id: '',
+            amount: double.parse(_amountController.text),
+            category: _selectedCategory!,
+            date: DateTime.now(),
+            userId: uid,
+            userName: uName,
+            type: _transactionType,
+            visibility: _isPrivate ? TransactionModel.visibilityPrivate : TransactionModel.visibilityShared,
+            tabId: widget.initialTabId,
+            note: _noteController.text.trim(),
+          );
+          await firestoreService.addTransaction(transaction);
+          if (mounted) {
+            ToastUtils.showSuccess(context, 'Transaction added!');
+            Navigator.pop(context);
+          }
         }
       } catch (e) {
         if (mounted) {
@@ -141,7 +184,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('New Transaction'),
+        title: Text(widget.isEditMode ? 'Edit Transaction' : 'New Transaction'),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -539,7 +582,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     ),
                     child: _isLoading 
                       ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                      : const Text('Save Transaction', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      : Text(widget.isEditMode ? 'Update Transaction' : 'Save Transaction', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ).animate().slideY(begin: 0.5, end: 0, duration: 400.ms),

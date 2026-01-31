@@ -283,6 +283,23 @@ class FirestoreService {
     await _transactions.add(data);
   }
 
+  // Delete Transaction
+  Future<void> deleteTransaction(String transactionId) async {
+    final user = _authService.currentUser;
+    if (user == null) throw Exception('Not authenticated');
+    
+    await _transactions.doc(transactionId).delete();
+  }
+
+  // Update Transaction
+  Future<void> updateTransaction(TransactionModel transaction) async {
+    final user = _authService.currentUser;
+    if (user == null) throw Exception('Not authenticated');
+
+    final data = transaction.toMap();
+    await _transactions.doc(transaction.id).update(data);
+  }
+
   // Get transactions for family (real-time stream)
   Stream<List<TransactionModel>> getTransactions() async* {
     final user = _authService.currentUser;

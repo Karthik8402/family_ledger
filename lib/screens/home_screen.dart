@@ -15,6 +15,7 @@ import '../widgets/home/family_info_sheet.dart';
 import '../widgets/home/transaction_item.dart';
 import '../widgets/home/stat_card.dart';
 import '../widgets/home/date_selector.dart';
+import '../utils/toast_utils.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -541,7 +542,62 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
   Widget _buildTransactionItem(TransactionModel transaction, String currentUserId) {
-    return TransactionItemWidget(transaction: transaction, currentUserId: currentUserId);
+    return TransactionItemWidget(
+      transaction: transaction,
+      currentUserId: currentUserId,
+      onEdit: () => _editTransaction(transaction),
+      onDelete: () => _confirmDeleteTransaction(transaction),
+    );
+  }
+
+  void _editTransaction(TransactionModel transaction) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddTransactionScreen(
+          initialType: transaction.type,
+          initialTabId: transaction.tabId,
+          editTransaction: transaction,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteTransaction(TransactionModel transaction) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Transaction'),
+        content: Text(
+          'Are you sure you want to delete this ${transaction.category} transaction of ₹${transaction.amount.toStringAsFixed(2)}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        await Provider.of<FirestoreService>(context, listen: false)
+            .deleteTransaction(transaction.id);
+        if (mounted) {
+          ToastUtils.showSuccess(context, 'Transaction deleted');
+        }
+      } catch (e) {
+        if (mounted) {
+          ToastUtils.showError(context, 'Failed to delete: $e');
+        }
+      }
+    }
   }
 
   // --- Helper Methods ---
