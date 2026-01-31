@@ -18,7 +18,6 @@ import '../widgets/home/date_selector.dart';
 import '../utils/toast_utils.dart';
 import '../models/filter_model.dart';
 import '../widgets/filter_sheet.dart';
-import '../widgets/connectivity_banner.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -195,100 +194,97 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         // Update Controller safely
         _updateTabController(totalTabs); // Only recreates if length changes
 
-        return ConnectivityBanner(
-          child: Scaffold(
-            appBar: _buildAppBar(trackingTabs),
-            body: StreamBuilder<List<TransactionModel>>(
-              stream: firestoreService.getTransactions(),
-              builder: (context, txnSnapshot) {
-                // if (txnSnapshot.connectionState == ConnectionState.waiting) {
-                //    return const Center(child: CircularProgressIndicator());
-                // }
+        return Scaffold(
+          appBar: _buildAppBar(trackingTabs),
+          body: StreamBuilder<List<TransactionModel>>(
+            stream: firestoreService.getTransactions(),
+            builder: (context, txnSnapshot) {
+              // if (txnSnapshot.connectionState == ConnectionState.waiting) {
+              //    return const Center(child: CircularProgressIndicator());
+              // }
 
-                final allTransactions = txnSnapshot.data ?? [];
-                // Store for filter sheet access
-                if (allTransactions.isNotEmpty && _allTransactions.isEmpty) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted)
-                      setState(() => _allTransactions = allTransactions);
-                  });
-                } else if (allTransactions.length != _allTransactions.length) {
-                  _allTransactions = allTransactions;
-                }
-                final filteredTransactions =
-                    _filterTransactions(allTransactions);
+              final allTransactions = txnSnapshot.data ?? [];
+              // Store for filter sheet access
+              if (allTransactions.isNotEmpty && _allTransactions.isEmpty) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted)
+                    setState(() => _allTransactions = allTransactions);
+                });
+              } else if (allTransactions.length != _allTransactions.length) {
+                _allTransactions = allTransactions;
+              }
+              final filteredTransactions = _filterTransactions(allTransactions);
 
-                return TabBarView(
-                  controller: _tabController,
-                  children: [
-                    // 1. Expenses Tab (Main)
-                    _buildTransactionTab(
-                      context,
-                      filteredTransactions,
-                      TransactionModel.typeExpense,
-                      currentUserId,
-                      Colors.redAccent,
-                      'Total Expenses',
-                      Icons.arrow_downward,
-                      tabId: null, // Main tab
-                    ),
+              return TabBarView(
+                controller: _tabController,
+                children: [
+                  // 1. Expenses Tab (Main)
+                  _buildTransactionTab(
+                    context,
+                    filteredTransactions,
+                    TransactionModel.typeExpense,
+                    currentUserId,
+                    Colors.redAccent,
+                    'Total Expenses',
+                    Icons.arrow_downward,
+                    tabId: null, // Main tab
+                  ),
 
-                    // 2. Income Tab (Main)
-                    _buildTransactionTab(
-                      context,
-                      filteredTransactions,
-                      TransactionModel.typeIncome,
-                      currentUserId,
-                      Colors.greenAccent,
-                      'Total Income',
-                      Icons.arrow_upward,
-                      tabId: null, // Main tab
-                    ),
+                  // 2. Income Tab (Main)
+                  _buildTransactionTab(
+                    context,
+                    filteredTransactions,
+                    TransactionModel.typeIncome,
+                    currentUserId,
+                    Colors.greenAccent,
+                    'Total Income',
+                    Icons.arrow_upward,
+                    tabId: null, // Main tab
+                  ),
 
-                    // 3+. Custom Tracking Tabs
-                    ...trackingTabs.map((tab) => _buildCustomTab(
-                          context,
-                          filteredTransactions,
-                          currentUserId,
-                          tab,
-                        )),
+                  // 3+. Custom Tracking Tabs
+                  ...trackingTabs.map((tab) => _buildCustomTab(
+                        context,
+                        filteredTransactions,
+                        currentUserId,
+                        tab,
+                      )),
 
-                    // Placeholder for + tab (user never sees this as tapping + opens dialog)
-                    const SizedBox.shrink(),
-                  ],
-                );
-              },
-            ),
-            floatingActionButton: FloatingActionButton.extended(
-              onPressed: () {
-                final index = _tabController!.index;
-                String? initialType;
-                String? initialTabId;
-
-                if (index == 0) {
-                  initialType = TransactionModel.typeExpense;
-                } else if (index == 1) {
-                  initialType = TransactionModel.typeIncome;
-                } else {
-                  // Custom Tab
-                  initialTabId = trackingTabs[index - 2].id;
-                }
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => AddTransactionScreen(
-                            initialType: initialType,
-                            initialTabId: initialTabId,
-                          )),
-                );
-              },
-              label: const Text('Add New'),
-              icon: const Icon(Icons.add_circle_outline),
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Colors.white,
-            ).animate().scale(delay: 500.ms),
+                  // Placeholder for + tab (user never sees this as tapping + opens dialog)
+                  const SizedBox.shrink(),
+                ],
+              );
+            },
           ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () {
+              final index = _tabController!.index;
+              String? initialType;
+              String? initialTabId;
+
+              if (index == 0) {
+                initialType = TransactionModel.typeExpense;
+              } else if (index == 1) {
+                initialType = TransactionModel.typeIncome;
+              } else {
+                // Custom Tab
+                initialTabId = trackingTabs[index - 2].id;
+              }
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => AddTransactionScreen(
+                          initialType: initialType,
+                          initialTabId: initialTabId,
+                        )),
+              );
+            },
+            label: const Text('Add New'),
+            icon: const Icon(Icons.add_circle_outline),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Colors.white,
+          ).animate().scale(delay: 500.ms),
         );
       },
     );
