@@ -39,7 +39,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final authenticated = await _biometricService.authenticate();
       if (!authenticated) return;
     }
-    
+
     await _biometricService.setBiometricsEnabled(value);
     if (mounted) {
       setState(() => _isBiometricsEnabled = value);
@@ -62,15 +62,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildSectionHeader('Account'),
             ListTile(
               leading: CircleAvatar(
-                backgroundImage: user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
-                child: user.photoUrl == null ? Text(user.displayName?[0] ?? 'U') : null,
+                backgroundImage:
+                    user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
+                child: user.photoUrl == null
+                    ? Text(user.displayName?[0] ?? 'U')
+                    : null,
               ),
               title: Text(user.displayName ?? 'User'),
               subtitle: Text(user.email),
             ),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+              title:
+                  const Text('Sign Out', style: TextStyle(color: Colors.red)),
               onTap: () async {
                 final confirm = await showDialog<bool>(
                   context: context,
@@ -78,12 +82,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: const Text('Sign Out?'),
                     content: const Text('Are you sure you want to sign out?'),
                     actions: [
-                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                      FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Sign Out')),
+                      TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel')),
+                      FilledButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Sign Out')),
                     ],
                   ),
                 );
-                
+
                 if (confirm == true && mounted) {
                   await context.read<AuthService>().signOut();
                   if (mounted) Navigator.pop(context); // Close settings
@@ -110,7 +118,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: Text('App Lock Unavailable'),
               subtitle: Text('Biometrics not supported on this device'),
             ),
-            
+
           const Divider(),
 
           // Appearance Section
@@ -121,9 +129,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             value: themeProvider.isDarkMode,
             onChanged: (value) => themeProvider.toggleTheme(),
           ),
-          
+
           const Divider(),
-          
+
           // About Section
           _buildSectionHeader('About'),
           const ListTile(
@@ -142,7 +150,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Text(
         title,
         style: TextStyle(
-          color: Theme.of(context).primaryColor,
+          color: Theme.of(context).colorScheme.primary,
           fontWeight: FontWeight.bold,
           fontSize: 14,
         ),

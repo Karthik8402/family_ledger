@@ -311,7 +311,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         indicatorColor: Theme.of(context).colorScheme.primary,
         labelColor: Theme.of(context).colorScheme.primary,
         unselectedLabelColor: Colors.grey,
-        isScrollable: true, // Allow scrolling if many tabs
+        isScrollable:
+            customTabs.length > 2, // Only scroll if needed, else fill width
         tabs: [
           const Tab(text: 'Expenses', icon: Icon(Icons.credit_card)),
           const Tab(text: 'Income', icon: Icon(Icons.savings)),
