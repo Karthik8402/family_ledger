@@ -20,6 +20,19 @@ service cloud.firestore {
              request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.memberIds;
     }
 
+    // Check if user is joining a family (adding themselves to memberIds)
+    function isJoiningFamily() {
+      return isSignedIn() &&
+             // New member list must contain current user
+             request.resource.data.memberIds.hasAll([request.auth.uid]) &&
+             // New member list must contain all previous members
+             request.resource.data.memberIds.hasAll(resource.data.memberIds) &&
+             // Size must increase by exactly 1
+             request.resource.data.memberIds.size() == resource.data.memberIds.size() + 1 &&
+             // Must not change the owner
+             request.resource.data.ownerId == resource.data.ownerId;
+    }
+
     // ========== USERS COLLECTION ==========
     match /users/{userId} {
       // Any signed-in user can read any user profile (for family member lookup)
@@ -32,8 +45,9 @@ service cloud.firestore {
     match /families/{familyId} {
       // Any authenticated user can create a family or read families (needed for join-by-code)
       allow create, read: if isSignedIn();
-      // Only members can update or delete
-      allow update, delete: if isFamilyMember(familyId);
+      // Members can update/delete, OR non-members can update if they are joining
+      allow update: if isFamilyMember(familyId) || isJoiningFamily();
+      allow delete: if isFamilyMember(familyId);
       
       // Categories sub-collection - only family members
       match /categories/{catId} {

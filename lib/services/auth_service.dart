@@ -21,7 +21,7 @@ class AuthService {
   User? get currentUser => _firebaseAuth.currentUser;
 
   AuthService() {
-    _init();
+    // _init(); // Disabled: Prevents auto-login when Google account exists on device
   }
 
   Future<void> _init() async {

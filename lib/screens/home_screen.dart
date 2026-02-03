@@ -211,9 +211,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         // Update Controller safely
         _updateTabController(totalTabs); // Only recreates if length changes
 
-        return Scaffold(
-          appBar: _buildAppBar(trackingTabs),
-          body: StreamBuilder<List<TransactionModel>>(
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) async {
+            if (didPop) return;
+            final shouldExit = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Exit App?'),
+                content: const Text('Are you sure you want to exit?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text('Exit'),
+                  ),
+                ],
+              ),
+            );
+            if (shouldExit == true && context.mounted) {
+              Navigator.of(context).pop();
+            }
+          },
+          child: Scaffold(
+            appBar: _buildAppBar(trackingTabs),
+            body: StreamBuilder<List<TransactionModel>>(
             stream: firestoreService.getTransactions(),
             builder: (context, txnSnapshot) {
               // if (txnSnapshot.connectionState == ConnectionState.waiting) {
@@ -302,7 +327,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Colors.white,
           ).animate().scale(delay: 500.ms),
-        );
+          ), // End of Scaffold
+        ); // End of PopScope
       },
     );
   }
