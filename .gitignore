@@ -1,3 +1,11 @@
+# .gitignore
+# Firebase CLI cache/logs
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.runtimeconfig.json
+
 # Miscellaneous
 *.class
 *.log
