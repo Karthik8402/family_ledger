@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../models/transaction_model.dart';
 import '../models/category_model.dart';
+
 import '../services/firestore_service.dart';
 import '../services/auth_service.dart';
+
 import '../utils/toast_utils.dart';
 import 'category_management_screen.dart';
 
@@ -155,6 +157,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             note: _noteController.text.trim(),
           );
           await firestoreService.addTransaction(transaction);
+
           if (mounted) {
             ToastUtils.showSuccess(context, 'Transaction added!');
             Navigator.pop(context);
@@ -270,10 +273,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                   filled: false,
                                 ),
                                 validator: (value) {
-                                  if (value == null || value.isEmpty)
+                                  if (value == null || value.isEmpty) {
                                     return 'Enter amount';
-                                  if (double.tryParse(value) == null)
+                                  }
+                                  if (double.tryParse(value) == null) {
                                     return 'Invalid number';
+                                  }
                                   return null;
                                 },
                               ),

@@ -31,6 +31,9 @@ dependencies:
   local_auth: ^2.3.0
   flutter_native_splash: ^2.4.3
 
+
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

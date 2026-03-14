@@ -425,7 +425,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, child) {
               return ThemeToggleButton(
-                isDark: themeProvider.isDarkMode,
+                themeMode: themeProvider.themeMode,
                 onToggle: () => themeProvider.toggleTheme(),
               );
             },

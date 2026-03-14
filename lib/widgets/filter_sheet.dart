@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/filter_model.dart';
 import '../models/user_model.dart';
+import 'common/profile_avatar.dart';
 
 /// Bottom sheet widget for advanced transaction filtering
 class FilterSheet extends StatefulWidget {
@@ -114,8 +115,8 @@ class _FilterSheetState extends State<FilterSheet> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: Theme.of(context).colorScheme.primary,
-            ),
+                  primary: Theme.of(context).colorScheme.primary,
+                ),
           ),
           child: child!,
         );
@@ -157,7 +158,7 @@ class _FilterSheetState extends State<FilterSheet> {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              
+
               // Header
               Padding(
                 padding: const EdgeInsets.all(16),
@@ -369,7 +370,8 @@ class _FilterSheetState extends State<FilterSheet> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
           ),
         ),
@@ -387,7 +389,8 @@ class _FilterSheetState extends State<FilterSheet> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
           ),
         ),
@@ -402,18 +405,12 @@ class _FilterSheetState extends State<FilterSheet> {
       children: widget.familyMembers.map((member) {
         final isSelected = _selectedMemberIds.contains(member.id);
         return FilterChip(
-          avatar: member.photoUrl != null
-              ? CircleAvatar(
-                  backgroundImage: NetworkImage(member.photoUrl!),
-                  radius: 12,
-                )
-              : CircleAvatar(
-                  radius: 12,
-                  child: Text(
-                    member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
-                    style: const TextStyle(fontSize: 10),
-                  ),
-                ),
+          avatar: ProfileAvatar(
+            url: member.photoUrl,
+            name: member.name,
+            primaryColor: theme.colorScheme.primary,
+            radius: 12,
+          ),
           label: Text(member.name.split(' ').first),
           selected: isSelected,
           onSelected: (selected) {

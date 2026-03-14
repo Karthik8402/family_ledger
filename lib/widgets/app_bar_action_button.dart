@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 /// A modern, animated app bar action button with theme-aware styling
 /// Features: scale animation on press, subtle hover glow, icon color transitions
@@ -198,14 +199,14 @@ class _AppBarActionButtonState extends State<AppBarActionButton>
   }
 }
 
-/// Specialized theme toggle button with animated sun/moon transition
+/// Specialized theme toggle button with support for system/light/dark modes
 class ThemeToggleButton extends StatefulWidget {
-  final bool isDark;
+  final ThemeMode themeMode;
   final VoidCallback onToggle;
 
   const ThemeToggleButton({
     super.key,
-    required this.isDark,
+    required this.themeMode,
     required this.onToggle,
   });
 
@@ -220,6 +221,14 @@ class _ThemeToggleButtonState extends State<ThemeToggleButton>
 
   bool _isHovered = false;
 
+  bool get _isDark {
+    if (widget.themeMode == ThemeMode.system) {
+      return SchedulerBinding.instance.platformDispatcher.platformBrightness ==
+          Brightness.dark;
+    }
+    return widget.themeMode == ThemeMode.dark;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -232,7 +241,7 @@ class _ThemeToggleButtonState extends State<ThemeToggleButton>
       end: 1.0,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
-    if (widget.isDark) {
+    if (_isDark) {
       _controller.value = 1.0;
     }
   }
@@ -240,8 +249,13 @@ class _ThemeToggleButtonState extends State<ThemeToggleButton>
   @override
   void didUpdateWidget(ThemeToggleButton oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.isDark != widget.isDark) {
-      if (widget.isDark) {
+    final oldIsDark = oldWidget.themeMode == ThemeMode.dark ||
+        (oldWidget.themeMode == ThemeMode.system &&
+            SchedulerBinding.instance.platformDispatcher.platformBrightness ==
+                Brightness.dark);
+
+    if (oldIsDark != _isDark) {
+      if (_isDark) {
         _controller.forward();
       } else {
         _controller.reverse();
@@ -259,6 +273,26 @@ class _ThemeToggleButtonState extends State<ThemeToggleButton>
   Widget build(BuildContext context) {
     const sunColor = Color(0xFFFFB300);
     const moonColor = Color(0xFF90CAF9);
+    const systemColor = Color(0xFF9C27B0); // Purple for system mode
+
+    // Get tooltip message based on theme mode
+    String tooltipMessage;
+    IconData iconData;
+    Color baseColor;
+
+    if (widget.themeMode == ThemeMode.system) {
+      tooltipMessage = 'System Theme (tap for Light)';
+      iconData = Icons.brightness_auto;
+      baseColor = systemColor;
+    } else if (_isDark) {
+      tooltipMessage = 'Dark Mode (tap for System)';
+      iconData = Icons.dark_mode_rounded;
+      baseColor = moonColor;
+    } else {
+      tooltipMessage = 'Light Mode (tap for Dark)';
+      iconData = Icons.light_mode_rounded;
+      baseColor = sunColor;
+    }
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -266,60 +300,64 @@ class _ThemeToggleButtonState extends State<ThemeToggleButton>
       child: GestureDetector(
         onTap: widget.onToggle,
         child: Tooltip(
-          message:
-              widget.isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+          message: tooltipMessage,
           preferBelow: false,
           child: AnimatedBuilder(
             animation: _controller,
             builder: (context, child) {
-              final color =
-                  Color.lerp(sunColor, moonColor, _rotationAnimation.value)!;
               return AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 margin: const EdgeInsets.symmetric(horizontal: 3),
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: widget.isDark
+                    colors: widget.themeMode == ThemeMode.system
                         ? [
-                            const Color(0xFF1a1a2e)
+                            const Color(0xFFE1BEE7)
                                 .withValues(alpha: _isHovered ? 0.9 : 0.7),
-                            const Color(0xFF16213e)
+                            const Color(0xFFCE93D8)
                                 .withValues(alpha: _isHovered ? 0.9 : 0.7),
                           ]
-                        : [
-                            const Color(0xFFFFF8E1)
-                                .withValues(alpha: _isHovered ? 0.9 : 0.7),
-                            const Color(0xFFFFECB3)
-                                .withValues(alpha: _isHovered ? 0.9 : 0.7),
-                          ],
+                        : _isDark
+                            ? [
+                                const Color(0xFF1a1a2e)
+                                    .withValues(alpha: _isHovered ? 0.9 : 0.7),
+                                const Color(0xFF16213e)
+                                    .withValues(alpha: _isHovered ? 0.9 : 0.7),
+                              ]
+                            : [
+                                const Color(0xFFFFF8E1)
+                                    .withValues(alpha: _isHovered ? 0.9 : 0.7),
+                                const Color(0xFFFFECB3)
+                                    .withValues(alpha: _isHovered ? 0.9 : 0.7),
+                              ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: color.withValues(alpha: _isHovered ? 0.5 : 0.3),
+                    color: baseColor.withValues(alpha: _isHovered ? 0.5 : 0.3),
                     width: 1.2,
                   ),
                   boxShadow: [
                     if (_isHovered)
                       BoxShadow(
-                        color: color.withValues(alpha: 0.3),
+                        color: baseColor.withValues(alpha: 0.3),
                         blurRadius: 12,
                         spreadRadius: 0,
                       ),
                   ],
                 ),
                 child: Transform.rotate(
-                  angle: _rotationAnimation.value * 3.14159 * 2,
+                  angle: widget.themeMode == ThemeMode.system
+                      ? 0
+                      : _rotationAnimation.value * 3.14159 * 2,
                   child: Transform.scale(
                     scale: _isHovered ? 1.1 : 1.0,
                     child: Icon(
-                      widget.isDark
-                          ? Icons.dark_mode_rounded
-                          : Icons.light_mode_rounded,
+                      iconData,
                       size: 20,
-                      color: color,
+                      color: baseColor,
                     ),
                   ),
                 ),

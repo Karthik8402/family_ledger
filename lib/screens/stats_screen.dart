@@ -517,10 +517,7 @@ class _StatsScreenState extends State<StatsScreen>
         // Pie Chart Card
         _buildGlassCard(
           isDark: isDark,
-          child: SizedBox(
-            height: 280,
-            child: AnimatedPieChart(data: categoryTotals, isDark: isDark),
-          ),
+          child: AnimatedPieChart(data: categoryTotals, isDark: isDark),
         )
             .animate()
             .scale(
@@ -694,23 +691,33 @@ class _StatsScreenState extends State<StatsScreen>
 
   String _getCategoryEmoji(String category) {
     final lowerCategory = category.toLowerCase();
-    if (lowerCategory.contains('food') || lowerCategory.contains('grocery'))
+    if (lowerCategory.contains('food') || lowerCategory.contains('grocery')) {
       return '🍔';
+    }
     if (lowerCategory.contains('transport') ||
         lowerCategory.contains('fuel') ||
-        lowerCategory.contains('travel')) return '🚗';
-    if (lowerCategory.contains('health') || lowerCategory.contains('medical'))
+        lowerCategory.contains('travel')) {
+      return '🚗';
+    }
+    if (lowerCategory.contains('health') || lowerCategory.contains('medical')) {
       return '💊';
-    if (lowerCategory.contains('shopping') || lowerCategory.contains('cloth'))
+    }
+    if (lowerCategory.contains('shopping') || lowerCategory.contains('cloth')) {
       return '🛍️';
+    }
     if (lowerCategory.contains('entertainment') ||
-        lowerCategory.contains('movie')) return '🎬';
-    if (lowerCategory.contains('bill') || lowerCategory.contains('utility'))
+        lowerCategory.contains('movie')) {
+      return '🎬';
+    }
+    if (lowerCategory.contains('bill') || lowerCategory.contains('utility')) {
       return '📄';
-    if (lowerCategory.contains('rent') || lowerCategory.contains('home'))
+    }
+    if (lowerCategory.contains('rent') || lowerCategory.contains('home')) {
       return '🏠';
-    if (lowerCategory.contains('education') || lowerCategory.contains('book'))
+    }
+    if (lowerCategory.contains('education') || lowerCategory.contains('book')) {
       return '📚';
+    }
     return '💳';
   }
 

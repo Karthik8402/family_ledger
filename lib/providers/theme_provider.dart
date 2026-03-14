@@ -8,7 +8,8 @@ class ThemeProvider extends ChangeNotifier {
 
   bool get isDarkMode {
     if (_themeMode == ThemeMode.system) {
-      return SchedulerBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
+      return SchedulerBinding.instance.platformDispatcher.platformBrightness ==
+          Brightness.dark;
     }
     return _themeMode == ThemeMode.dark;
   }
@@ -19,10 +20,13 @@ class ThemeProvider extends ChangeNotifier {
   }
 
   void toggleTheme() {
-    if (_themeMode == ThemeMode.light) {
+    // Cycle through: system → light → dark → system
+    if (_themeMode == ThemeMode.system) {
+      _themeMode = ThemeMode.light;
+    } else if (_themeMode == ThemeMode.light) {
       _themeMode = ThemeMode.dark;
     } else {
-      _themeMode = ThemeMode.light;
+      _themeMode = ThemeMode.system;
     }
     notifyListeners();
   }
@@ -79,7 +83,8 @@ class ThemeProvider extends ChangeNotifier {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: primaryColor, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -87,14 +92,16 @@ class ThemeProvider extends ChangeNotifier {
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
       ),
@@ -153,7 +160,8 @@ class ThemeProvider extends ChangeNotifier {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: primaryColor, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -161,14 +169,16 @@ class ThemeProvider extends ChangeNotifier {
           foregroundColor: Colors.black,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
       ),
