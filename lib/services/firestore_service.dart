@@ -170,8 +170,9 @@ class FirestoreService {
       String familyId, String memberId, String requesterId) async {
     final family = await getFamily(familyId);
     if (family == null) throw Exception('Family not found');
-    if (family.ownerId != requesterId)
+    if (family.ownerId != requesterId) {
       throw Exception('Only owner can remove members');
+    }
     if (memberId == family.ownerId) throw Exception('Owner cannot be removed');
 
     await _families.doc(familyId).update({
@@ -186,10 +187,12 @@ class FirestoreService {
       String familyId, String newOwnerId, String requesterId) async {
     final family = await getFamily(familyId);
     if (family == null) throw Exception('Family not found');
-    if (family.ownerId != requesterId)
+    if (family.ownerId != requesterId) {
       throw Exception('Only owner can transfer ownership');
-    if (!family.memberIds.contains(newOwnerId))
+    }
+    if (!family.memberIds.contains(newOwnerId)) {
       throw Exception('New owner must be a family member');
+    }
 
     await _families.doc(familyId).update({
       'ownerId': newOwnerId,
@@ -345,7 +348,8 @@ class FirestoreService {
           .where((txn) {
         // Privacy logic: shared = all family sees, private = only owner sees
         bool isShared = txn.visibility == 'shared';
-        bool isMyPrivate = txn.visibility == 'private' && txn.userId == user.uid;
+        bool isMyPrivate =
+            txn.visibility == 'private' && txn.userId == user.uid;
         return isShared || isMyPrivate;
       }).toList();
 
@@ -551,5 +555,24 @@ class FirestoreService {
   // Delete Budget
   Future<void> deleteBudget(String familyId, String budgetId) async {
     await _getBudgetsRef(familyId).doc(budgetId).delete();
+  }
+
+  // Helper for Notifications: Get budgets explicitly by familyId
+  Stream<List<BudgetModel>> getBudgets(String familyId, int month, int year) {
+    return _getBudgetsRef(familyId)
+        .where('month', isEqualTo: month)
+        .where('year', isEqualTo: year)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => BudgetModel.fromFirestore(doc))
+            .toList());
+  }
+
+  // Helper for Notifications: Get all family transactions
+  Stream<List<TransactionModel>> getFamilyTransactions(String familyId) {
+    return _transactions.where('familyId', isEqualTo: familyId).snapshots().map(
+        (snapshot) => snapshot.docs
+            .map((doc) => TransactionModel.fromFirestore(doc))
+            .toList());
   }
 }

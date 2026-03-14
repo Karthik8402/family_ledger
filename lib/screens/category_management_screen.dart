@@ -105,8 +105,9 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen>
     return StreamBuilder<List<CategoryModel>>(
       stream: context.read<FirestoreService>().streamCategories(_familyId!),
       builder: (context, snapshot) {
-        if (!snapshot.hasData)
+        if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
+        }
 
         final categories = snapshot.data!.where((c) => c.type == type).toList();
 
@@ -131,7 +132,8 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen>
                 children: [
                   if (type == 'expense')
                     IconButton(
-                      icon: const Icon(Icons.attach_money, color: Colors.green),
+                      icon:
+                          const Icon(Icons.currency_rupee, color: Colors.green),
                       tooltip: 'Set Monthly Budget',
                       onPressed: () => _showSetBudgetDialog(cat),
                     ),
@@ -188,9 +190,32 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen>
 
   Future<void> _showSetBudgetDialog(CategoryModel category) async {
     final controller = TextEditingController();
+    double? existingAmount;
 
-    // Check for existing budget (optional, skipping for speed, will just overwrite)
-    // To make it nicer, we could fetch it, but let's keep it snappy.
+    // Fetch existing budget
+    if (_familyId != null) {
+      try {
+        final now = DateTime.now();
+        final budgets = await context
+            .read<FirestoreService>()
+            .getBudgets(_familyId!, now.month, now.year)
+            .first;
+
+        final existingBudget = budgets.cast<BudgetModel?>().firstWhere(
+              (b) => b?.categoryName == category.name,
+              orElse: () => null,
+            );
+
+        if (existingBudget != null) {
+          existingAmount = existingBudget.amount;
+          controller.text = existingAmount.toStringAsFixed(0);
+        }
+      } catch (e) {
+        debugPrint('Error fetching budget: $e');
+      }
+    }
+
+    if (!mounted) return;
 
     await showDialog(
       context: context,
@@ -221,8 +246,12 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen>
               final amount = double.tryParse(controller.text.trim());
               if (amount != null && amount > 0 && _familyId != null) {
                 final now = DateTime.now();
+                // Use existing ID if updating, though setBudget usually handles this by mostly overwriting logic or we send new.
+                // FirestoreService.setBudget likely uses a composite ID or checks existence.
+                // Looking at FirestoreService usage, it generates ID. Let's create new model.
+
                 final budget = BudgetModel(
-                  id: '', // Generated ID in service
+                  id: '',
                   familyId: _familyId!,
                   categoryName: category.name,
                   amount: amount,
@@ -243,7 +272,8 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen>
                 }
               }
             },
-            child: const Text('Save Budget'),
+            child:
+                Text(existingAmount != null ? 'Update Budget' : 'Save Budget'),
           ),
         ],
       ),

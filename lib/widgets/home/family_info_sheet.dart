@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/family_model.dart';
+import '../common/profile_avatar.dart';
 import '../../models/user_model.dart';
 import '../../services/firestore_service.dart';
 import '../../utils/toast_utils.dart';
@@ -63,20 +64,23 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
 
   Future<void> _loadData() async {
     try {
-      final userProfile = await widget.firestoreService.getUserProfile(widget.userId);
+      final userProfile =
+          await widget.firestoreService.getUserProfile(widget.userId);
       if (userProfile?.familyId == null) {
         if (mounted) Navigator.pop(context);
         return;
       }
-      
-      final family = await widget.firestoreService.getFamily(userProfile!.familyId!);
+
+      final family =
+          await widget.firestoreService.getFamily(userProfile!.familyId!);
       if (family == null) {
         if (mounted) Navigator.pop(context);
         return;
       }
 
-      final members = await widget.firestoreService.getFamilyMembers(userProfile.familyId!);
-      
+      final members =
+          await widget.firestoreService.getFamilyMembers(userProfile.familyId!);
+
       if (mounted) {
         setState(() {
           _family = family;
@@ -110,7 +114,7 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          
+
           if (_isLoading)
             Padding(
               padding: const EdgeInsets.all(48),
@@ -122,22 +126,29 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
                       color: widget.primaryColor.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.family_restroom, size: 40, color: widget.primaryColor),
+                    child: Icon(Icons.family_restroom,
+                        size: 40, color: widget.primaryColor),
                   ),
                   const SizedBox(height: 24),
                   SizedBox(
                     width: 24,
                     height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: widget.primaryColor),
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: widget.primaryColor),
                   ),
                   const SizedBox(height: 12),
-                  Text('Loading...', style: TextStyle(color: Colors.grey.shade600)),
+                  Text('Loading...',
+                      style: TextStyle(color: Colors.grey.shade600)),
                 ],
               ),
             )
           else
-            _buildContent(),
-          
+            Flexible(
+              child: SingleChildScrollView(
+                child: _buildContent(),
+              ),
+            ),
+
           SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
         ],
       ),
@@ -146,7 +157,7 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
 
   Widget _buildContent() {
     if (_family == null) return const SizedBox();
-    
+
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -158,24 +169,26 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
               color: widget.primaryColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.family_restroom, size: 40, color: widget.primaryColor),
+            child: Icon(Icons.family_restroom,
+                size: 40, color: widget.primaryColor),
           ),
           const SizedBox(height: 16),
-          
+
           // Family Name
           Text(
             _family!.name,
             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 24),
-          
+
           // Family Code Card
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: widget.primaryColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: widget.primaryColor.withValues(alpha: 0.3)),
+              border:
+                  Border.all(color: widget.primaryColor.withValues(alpha: 0.3)),
             ),
             child: Column(
               children: [
@@ -205,7 +218,8 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
                     IconButton(
                       onPressed: () {
                         Clipboard.setData(ClipboardData(text: _family!.code));
-                        ToastUtils.showSuccess(widget.parentContext, 'Code copied!');
+                        ToastUtils.showSuccess(
+                            widget.parentContext, 'Code copied!');
                       },
                       icon: Icon(Icons.copy, color: widget.primaryColor),
                       tooltip: 'Copy Code',
@@ -220,30 +234,36 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Members Section
           Row(
             children: [
               Text(
                 'Members (${_members.length})',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const Spacer(),
               if (_isOwner)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text('Admin Mode', style: TextStyle(fontSize: 11, color: Colors.blue, fontWeight: FontWeight.bold)),
+                  child: const Text('Admin Mode',
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold)),
                 ),
             ],
           ),
           const SizedBox(height: 12),
-          
+
           ..._members.map((member) => _buildMemberTile(member)),
         ],
       ),
@@ -253,43 +273,23 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
   Widget _buildMemberTile(UserModel member) {
     final isMemberOwner = member.id == _family!.ownerId;
     final isCurrentUser = member.id == widget.userId;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: widget.isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
+        color: widget.isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: widget.primaryColor.withValues(alpha: 0.15),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: member.photoUrl != null && member.photoUrl!.isNotEmpty
-                ? Image.network(
-                    member.photoUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Center(
-                        child: Text(
-                          member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
-                          style: TextStyle(color: widget.primaryColor, fontWeight: FontWeight.bold),
-                        ),
-                      );
-                    },
-                  )
-                : Center(
-                    child: Text(
-                      member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
-                      style: TextStyle(color: widget.primaryColor, fontWeight: FontWeight.bold),
-                    ),
-                  ),
+          ProfileAvatar(
+            url: member.photoUrl,
+            name: member.name,
+            primaryColor: widget.primaryColor,
+            radius: 18,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -298,16 +298,22 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
               children: [
                 Row(
                   children: [
-                    Text(member.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    Text(member.name,
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
                     if (isCurrentUser) ...[
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.green.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Text('You', style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)),
+                        child: const Text('You',
+                            style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ],
@@ -328,7 +334,10 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
               ),
               child: const Text(
                 'Owner',
-                style: TextStyle(fontSize: 11, color: Colors.amber, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.amber,
+                    fontWeight: FontWeight.bold),
               ),
             )
           else if (_isOwner) ...[
@@ -350,31 +359,36 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
         // If this pop is for the bottom sheet, then `mounted` check is good.
         // But let's look at the logic. `Navigator.pop(context)` is called immediately.
         // If it closes the sheet, `mounted` becomes false?
-        // Let's remove this `Navigator.pop(context)` if it's redundant (PopupMenu closes itself), OR keep it if it closes the sheet. 
+        // Let's remove this `Navigator.pop(context)` if it's redundant (PopupMenu closes itself), OR keep it if it closes the sheet.
         // Assuming it closes the sheet.
         Navigator.pop(context);
 
-        
         if (value == 'transfer') {
           final confirm = await showDialog<bool>(
             context: widget.parentContext,
             builder: (ctx) => AlertDialog(
               title: const Text('Transfer Ownership'),
-              content: Text('Are you sure you want to make ${member.name} the new owner?'),
+              content: Text(
+                  'Are you sure you want to make ${member.name} the new owner?'),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: const Text('Cancel')),
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('Transfer', style: TextStyle(color: Colors.orange)),
+                  child: const Text('Transfer',
+                      style: TextStyle(color: Colors.orange)),
                 ),
               ],
             ),
           );
           if (confirm == true) {
             try {
-              await widget.firestoreService.transferOwnership(_family!.id, member.id, widget.userId);
+              await widget.firestoreService
+                  .transferOwnership(_family!.id, member.id, widget.userId);
               if (!mounted) return;
-              ToastUtils.showSuccess(widget.parentContext, 'Ownership transferred!');
+              ToastUtils.showSuccess(
+                  widget.parentContext, 'Ownership transferred!');
             } catch (e) {
               if (!mounted) return;
               ToastUtils.showError(widget.parentContext, 'Error: $e');
@@ -387,19 +401,24 @@ class _FamilyInfoSheetContentState extends State<FamilyInfoSheetContent> {
               title: const Text('Remove Member'),
               content: Text('Are you sure you want to remove ${member.name}?'),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: const Text('Cancel')),
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('Remove', style: TextStyle(color: Colors.red)),
+                  child:
+                      const Text('Remove', style: TextStyle(color: Colors.red)),
                 ),
               ],
             ),
           );
           if (confirm == true) {
             try {
-              await widget.firestoreService.removeFamilyMember(_family!.id, member.id, widget.userId);
+              await widget.firestoreService
+                  .removeFamilyMember(_family!.id, member.id, widget.userId);
               if (!mounted) return;
-              ToastUtils.showWarning(widget.parentContext, '${member.name} removed');
+              ToastUtils.showWarning(
+                  widget.parentContext, '${member.name} removed');
             } catch (e) {
               if (!mounted) return;
               ToastUtils.showError(widget.parentContext, 'Error: $e');

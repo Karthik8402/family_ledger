@@ -23,6 +23,9 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // Initialize Notification Service moved to HomeScreen to prevent hang
+  // await NotificationService().initialize();
+
   // Enable Firestore offline persistence
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,

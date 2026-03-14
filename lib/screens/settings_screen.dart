@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/biometric_service.dart';
 import '../providers/theme_provider.dart';
+import '../widgets/common/profile_avatar.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -61,12 +62,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (user != null) ...[
             _buildSectionHeader('Account'),
             ListTile(
-              leading: CircleAvatar(
-                backgroundImage:
-                    user.photoURL != null ? NetworkImage(user.photoURL!) : null,
-                child: user.photoURL == null
-                    ? Text(user.displayName?[0] ?? 'U')
-                    : null,
+              leading: ProfileAvatar(
+                url: user.photoURL,
+                name: user.displayName ?? 'User',
+                primaryColor: Theme.of(context).colorScheme.primary,
+                radius: 20,
               ),
               title: Text(user.displayName ?? 'User'),
               subtitle: Text(user.email ?? ''),
@@ -110,7 +110,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: const Text('Require biometrics to open app'),
               value: _isBiometricsEnabled,
               onChanged: _toggleBiometrics,
-              activeColor: Colors.teal,
+              activeThumbColor: Colors.teal,
               activeTrackColor: Colors.teal.withValues(alpha: 0.4),
             )
           else
@@ -124,11 +124,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Appearance Section
           _buildSectionHeader('Appearance'),
-          SwitchListTile(
-            secondary: const Icon(Icons.dark_mode),
-            title: const Text('Dark Mode'),
-            value: themeProvider.isDarkMode,
-            onChanged: (value) => themeProvider.toggleTheme(),
+          ListTile(
+            leading: const Icon(Icons.brightness_6),
+            title: const Text('Theme'),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: SegmentedButton<ThemeMode>(
+                segments: const [
+                  ButtonSegment(
+                    value: ThemeMode.system,
+                    label: Text('System'),
+                    icon: Icon(Icons.brightness_auto),
+                  ),
+                  ButtonSegment(
+                    value: ThemeMode.light,
+                    label: Text('Light'),
+                    icon: Icon(Icons.light_mode),
+                  ),
+                  ButtonSegment(
+                    value: ThemeMode.dark,
+                    label: Text('Dark'),
+                    icon: Icon(Icons.dark_mode),
+                  ),
+                ],
+                selected: {themeProvider.themeMode},
+                onSelectionChanged: (Set<ThemeMode> newSelection) {
+                  themeProvider.setThemeMode(newSelection.first);
+                },
+              ),
+            ),
           ),
 
           const Divider(),
